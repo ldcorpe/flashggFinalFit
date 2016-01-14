@@ -369,8 +369,8 @@ RooAbsPdf* PdfModelBuilder::getExponentialSingle(string prefix, int order){
 //number of functions
 
 RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
-  if(order<2){
-    cerr << "WARNING -- dijet needs to be at least of order 1" << endl;
+  if(order<1){
+    cerr << "[WARNING] -- dijet needs to be at least of order 1" << endl;
     return NULL;
   }
   else {
@@ -378,21 +378,34 @@ RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
     string formula=""; 
     RooArgList *dependents = new RooArgList();
     dependents->add(*obs_var);
-  	for (int i=2; i<=order; i++){
-		if(i==2){//FIXME maybe also ok to start from i=1 but wanted to start from reasonable fct for debugging
-    		string logc1 =  Form("%s_log%d",prefix.c_str(),i-1);
-    		params.insert(pair<string,RooRealVar*>(logc1, new RooRealVar(logc1.c_str(),logc1.c_str(),5.,-100.0,100.)));
-		dependents->add(*params[logc1]);
+  	for (int i=1; i<=order; i++){
+		//just to debug
+		if(order==2) {
+			string logc1 =  Form("%s_log%d",prefix.c_str(),1);
+    		params.insert(pair<string,RooRealVar*>(logc1, new RooRealVar(logc1.c_str(),logc1.c_str(),5.0,-10.0,10.)));
+			string logc2 =  Form("%s_log%d",prefix.c_str(),2);
+    		params.insert(pair<string,RooRealVar*>(logc2, new RooRealVar(logc2.c_str(),logc2.c_str(),-0.8,-10.0,10.)));
+			dependents->add(*params[logc1]);
+			dependents->add(*params[logc2]);
 		}
-    	string logc =  Form("%s_log%d",prefix.c_str(),i);
-    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-0.1,-100.0,100.)));
-		if(i==2){
-			formula_exp = Form("  @%d*log(@0)+@%d*TMath::Power(log(@0),%d)",i-1,i,i);
+		if(order==3) {
+			string logc1 =  Form("%s_log%d",prefix.c_str(),1);
+    		params.insert(pair<string,RooRealVar*>(logc1, new RooRealVar(logc1.c_str(),logc1.c_str(),-5.0,-10.0,10.)));
+			string logc2 =  Form("%s_log%d",prefix.c_str(),2);
+    		params.insert(pair<string,RooRealVar*>(logc2, new RooRealVar(logc2.c_str(),logc2.c_str(),2.6,-10.0,10.)));
+			string logc3 =  Form("%s_log%d",prefix.c_str(),3);
+    		params.insert(pair<string,RooRealVar*>(logc3, new RooRealVar(logc3.c_str(),logc2.c_str(),-0.3,-10.0,10.)));
+			dependents->add(*params[logc1]);
+			dependents->add(*params[logc2]);
+			dependents->add(*params[logc3]);
+		}
+		if (i==1){
+			formula_exp = Form("  (@%d*TMath::Power(log(@0),%d))",i,i);
+		
 		}
 		else{
 			formula_exp += Form(" + (@%d*TMath::Power(log(@0),%d))",i,i);
 		}
-		dependents->add(*params[logc]);
 	//	std::cout << "order" << i << std::endl;
 //		dependents->Print() ;
 //		std::cout << "formula " << formula_exp << std::endl;
