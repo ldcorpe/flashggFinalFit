@@ -17,7 +17,6 @@
 #include "RooConstVar.h"
 #include "RooFitResult.h"
 #include "RooRandom.h"
-
 #include "boost/algorithm/string/split.hpp"
 #include "boost/algorithm/string/classification.hpp"
 #include "boost/algorithm/string/predicate.hpp"
@@ -137,7 +136,7 @@ RooAbsPdf* PdfModelBuilder::getBernstein(string prefix, int order){
 RooAbsPdf* PdfModelBuilder::getPowerLawGeneric(string prefix, int order){
   
   if (order%2==0){
-    cerr << "[WARNING] -- addPowerLaw -- only odd number of params allowed -- skipping " << endl;
+    cerr << "ERROR -- addPowerLaw -- only odd number of params allowed" << endl;
     return NULL;
   }
   else {
@@ -226,7 +225,7 @@ RooAbsPdf* PdfModelBuilder::getExponential(string prefix, int order){
 RooAbsPdf* PdfModelBuilder::getPowerLawSingle(string prefix, int order){
   
   if (order%2==0){
-    cerr << "[WARNING] -- addPowerLaw -- only odd number of params allowed -- skipping" << endl;
+    cerr << "ERROR -- addPowerLaw -- only odd number of params allowed" << endl;
     return NULL;
   }
   else {
@@ -254,7 +253,7 @@ RooAbsPdf* PdfModelBuilder::getPowerLawSingle(string prefix, int order){
     //pows->Print("v");
     //cout << "Function..." << endl;
     RooAbsPdf *pow = new RooAddPdf(prefix.c_str(),prefix.c_str(),*pows,*fracs,true); 
-    //pow->Print("v");
+    pow->Print("v");
     return pow;
     //bkgPdfs.insert(pair<string,RooAbsPdf*>(pow->GetName(),pow));
   }
@@ -366,28 +365,83 @@ RooAbsPdf* PdfModelBuilder::getExponentialSingle(string prefix, int order){
 
   }
 }
+//MQ
+//number of functions
 
+RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
+  if(order<1){
+    cerr << "WARNING -- dijet needs to be at least of order 1" << endl;
+    return NULL;
+  }
+  else {
+    string formula_exp="";
+    string formula=""; 
+    RooArgList *dependents = new RooArgList();
+    dependents->add(*obs_var);
+  	for (int i=1; i<=order; i++){
+    	string logc =  Form("%s_log%d",prefix.c_str(),i);
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-0.1,-100.0,100.)));
+		if(i==1){
+			formula_exp = Form("  (@%d*TMath::Power(log(@0),%d))",i,i);
+		}
+		else{
+			formula_exp += Form(" + (@%d*TMath::Power(log(@0),%d))",i,i);
+		}
+			dependents->add(*params[logc]);
+		std::cout << "order" << i << std::endl;
+		dependents->Print() ;
+		std::cout << "formula " << formula_exp << std::endl;
+  	}  
+ 	//see if string like that works 
+  	formula= Form("TMath::Max(1e-50,TMath::Exp(%s))",formula_exp.c_str()) ; 
+    std::cout <<"formula :" <<formula << std::endl;
+  	RooGenericPdf* dijet = new RooGenericPdf(prefix.c_str(), prefix.c_str(), formula.c_str(),*dependents );
+    dijet->Print("v");
+  
+	return dijet;
+  }
 
-void PdfModelBuilder::addBkgPdf(string type, int nParams, string name, bool cache){
- 
-  if (!obs_var_set){
-    cerr << "ERROR -- obs Var has not been set!" << endl;
-    exit(1);
-  }
-  bool found=false;
-  for (vector<string>::iterator it=recognisedPdfTypes.begin(); it!=recognisedPdfTypes.end(); it++){
-    if (*it==type) found=true;
-  }
-  if (!found){
-    cerr << "Pdf of type " << type << " is not recognised!" << endl;
-    exit(1);
-  }
-  RooAbsPdf *pdf=0;// avoid uninitialised variable error in cmssw  
+}
+
+RooAbsPdf* PdfModelBuilder::getDijetSimple(string prefix, int order){
+    if (order==2){
+		RooArgList *dependents = new RooArgList();
+		dependents->add(*obs_var);
+		string linc =  Form("%s_lin%d",prefix.c_str(),order);
+		params.insert(pair<string,RooRealVar*>(linc, new RooRealVar(linc.c_str(),linc.c_str(),5.,-100.0,100.)));
+		string logc =  Form("%s_log%d",prefix.c_str(),order);
+		params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-1.,-100.0,100.)));
+		dependents->add(*params[linc]);
+		dependents->add(*params[logc]);
+		dependents->Print();
+		RooGenericPdf* dijet = new RooGenericPdf(prefix.c_str(), prefix.c_str(),"TMath::Power(@0,@1+@2*log(@0)) ",*dependents );
+		dijet->Print("v");
+		return dijet;
+	}
+	else {return NULL;}
+	}
+	void PdfModelBuilder::addBkgPdf(string type, int nParams, string name, bool cache){
+	 
+	  if (!obs_var_set){
+		cerr << "ERROR -- obs Var has not been set!" << endl;
+		exit(1);
+	  }
+	  bool found=false;
+	  for (vector<string>::iterator it=recognisedPdfTypes.begin(); it!=recognisedPdfTypes.end(); it++){
+		if (*it==type) found=true;
+	  }
+	  if (!found){
+		cerr << "Pdf of type " << type << " is not recognised!" << endl;
+		exit(1);
+	  }
+	  RooAbsPdf *pdf=0;// avoid uninitialised variable error in cmssw  
 
   if (type=="Bernstein") pdf = getBernstein(name,nParams);
   if (type=="Exponential") pdf = getExponentialSingle(name,nParams);
   if (type=="PowerLaw") pdf = getPowerLawSingle(name,nParams);
   if (type=="Laurent") pdf = getLaurentSeries(name,nParams);
+  if (type=="DijetSimple") pdf = getDijetSimple(name,nParams);
+  if (type=="Dijet") pdf = getDijet(name,nParams);
   if (type=="KeysPdf") pdf = getKeysPdf(name);
   if (type=="File") pdf = getPdfFromFile(name);
 
@@ -598,11 +652,11 @@ void PdfModelBuilder::throwToy(string postfix, int nEvents, bool bkgOnly, bool b
   map<string,RooAbsPdf*> pdfSet;
   if (bkgOnly) {
     pdfSet = bkgPdfs;
-    if (!bkgHasFit) cerr << "[WARNING] -- bkg has not been fit to data. Are you sure this is wise?" << endl; 
+    if (!bkgHasFit) cerr << "WARNING -- bkg has not been fit to data. Are you sure this is wise?" << endl; 
   }
   else {
     pdfSet = sbPdfs;
-    if (!sbHasFit) cerr << "[WARNING] -- sb has not been fit to data. Are you sure this is wise?" << endl;
+    if (!sbHasFit) cerr << "WARNING -- sb has not been fit to data. Are you sure this is wise?" << endl;
   }
   
   for (map<string,RooAbsPdf*>::iterator it=pdfSet.begin(); it!=pdfSet.end(); it++){
@@ -730,3 +784,6 @@ void PdfModelBuilder::saveWorkspace(TFile *file){
   file->cd();
   wsCache->Write();
 }
+
+
+
