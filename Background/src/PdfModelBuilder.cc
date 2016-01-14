@@ -137,7 +137,7 @@ RooAbsPdf* PdfModelBuilder::getBernstein(string prefix, int order){
 RooAbsPdf* PdfModelBuilder::getPowerLawGeneric(string prefix, int order){
   
   if (order%2==0){
-    cerr << "ERROR -- addPowerLaw -- only odd number of params allowed" << endl;
+    cerr << "[WARNING] -- addPowerLaw -- only odd number of params allowed -- skipping " << endl;
     return NULL;
   }
   else {
@@ -226,7 +226,7 @@ RooAbsPdf* PdfModelBuilder::getExponential(string prefix, int order){
 RooAbsPdf* PdfModelBuilder::getPowerLawSingle(string prefix, int order){
   
   if (order%2==0){
-    cerr << "ERROR -- addPowerLaw -- only odd number of params allowed" << endl;
+    cerr << "[WARNING] -- addPowerLaw -- only odd number of params allowed -- skipping" << endl;
     return NULL;
   }
   else {
@@ -598,11 +598,11 @@ void PdfModelBuilder::throwToy(string postfix, int nEvents, bool bkgOnly, bool b
   map<string,RooAbsPdf*> pdfSet;
   if (bkgOnly) {
     pdfSet = bkgPdfs;
-    if (!bkgHasFit) cerr << "WARNING -- bkg has not been fit to data. Are you sure this is wise?" << endl; 
+    if (!bkgHasFit) cerr << "[WARNING] -- bkg has not been fit to data. Are you sure this is wise?" << endl; 
   }
   else {
     pdfSet = sbPdfs;
-    if (!sbHasFit) cerr << "WARNING -- sb has not been fit to data. Are you sure this is wise?" << endl;
+    if (!sbHasFit) cerr << "[WARNING] -- sb has not been fit to data. Are you sure this is wise?" << endl;
   }
   
   for (map<string,RooAbsPdf*>::iterator it=pdfSet.begin(); it!=pdfSet.end(); it++){
