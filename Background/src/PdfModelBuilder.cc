@@ -369,7 +369,7 @@ RooAbsPdf* PdfModelBuilder::getExponentialSingle(string prefix, int order){
 //number of functions
 
 RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
-  if(order<1){
+  if(order<2){
     cerr << "WARNING -- dijet needs to be at least of order 1" << endl;
     return NULL;
   }
@@ -378,25 +378,30 @@ RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
     string formula=""; 
     RooArgList *dependents = new RooArgList();
     dependents->add(*obs_var);
-  	for (int i=1; i<=order; i++){
+  	for (int i=2; i<=order; i++){
+		if(i==2){//FIXME maybe also ok to start from i=1 but wanted to start from reasonable fct for debugging
+    		string logc1 =  Form("%s_log%d",prefix.c_str(),i-1);
+    		params.insert(pair<string,RooRealVar*>(logc1, new RooRealVar(logc1.c_str(),logc1.c_str(),5.,-100.0,100.)));
+		dependents->add(*params[logc1]);
+		}
     	string logc =  Form("%s_log%d",prefix.c_str(),i);
     	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-0.1,-100.0,100.)));
-		if(i==1){
-			formula_exp = Form("  (@%d*TMath::Power(log(@0),%d))",i,i);
+		if(i==2){
+			formula_exp = Form("  @%d*log(@0)+@%d*TMath::Power(log(@0),%d)",i-1,i,i);
 		}
 		else{
 			formula_exp += Form(" + (@%d*TMath::Power(log(@0),%d))",i,i);
 		}
-			dependents->add(*params[logc]);
-		std::cout << "order" << i << std::endl;
-		dependents->Print() ;
-		std::cout << "formula " << formula_exp << std::endl;
+		dependents->add(*params[logc]);
+	//	std::cout << "order" << i << std::endl;
+//		dependents->Print() ;
+//		std::cout << "formula " << formula_exp << std::endl;
   	}  
  	//see if string like that works 
-  	formula= Form("TMath::Max(1e-50,TMath::Exp(%s))",formula_exp.c_str()) ; 
-    std::cout <<"formula :" <<formula << std::endl;
+  	formula= Form("TMath::Exp(%s)",formula_exp.c_str()) ; 
+ //   std::cout <<"formula :" <<formula << std::endl;
   	RooGenericPdf* dijet = new RooGenericPdf(prefix.c_str(), prefix.c_str(), formula.c_str(),*dependents );
-    dijet->Print("v");
+    dijet->Print();
   
 	return dijet;
   }
@@ -415,7 +420,7 @@ RooAbsPdf* PdfModelBuilder::getDijetSimple(string prefix, int order){
 		dependents->add(*params[logc]);
 		dependents->Print();
 		RooGenericPdf* dijet = new RooGenericPdf(prefix.c_str(), prefix.c_str(),"TMath::Power(@0,@1+@2*log(@0)) ",*dependents );
-		dijet->Print("v");
+		dijet->Print();
 		return dijet;
 	}
 	else {return NULL;}
