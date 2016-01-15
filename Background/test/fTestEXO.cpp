@@ -118,7 +118,6 @@ double getProbabilityFtest(double chi2, int ndof,RooAbsPdf *pdfNull, RooAbsPdf *
  
   int ntoys =5000;
   TCanvas *can = new TCanvas();
-  can->SetLogy();
   TH1F toyhist(Form("toys_fTest_%s.pdf",pdfNull->GetName()),";Chi2;",60,-2,10);
   TH1I toyhistStatN(Form("Status_%s.pdf",pdfNull->GetName()),";FitStatus;",8,-4,4);
   TH1I toyhistStatT(Form("Status_%s.pdf",pdfTest->GetName()),";FitStatus;",8,-4,4);
@@ -198,7 +197,6 @@ double getProbabilityFtest(double chi2, int ndof,RooAbsPdf *pdfNull, RooAbsPdf *
   can->SaveAs(name.c_str());
 
   TCanvas *stas =new TCanvas();
-  toyhistStatN.SetLineColor(2);
   toyhistStatT.SetLineColor(1); 
   TLegend *leg = new TLegend(0.2,0.6,0.4,0.89); leg->SetFillColor(0);
   leg->SetTextFont(42);
@@ -278,7 +276,9 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
     prob = (double)npass / ntoys;
 
     TCanvas *can = new TCanvas();
-    double medianChi2 = toy_chi2[(int)(((float)ntoys)/2)];
+    can->SetLogy();
+    can->SetLogx();
+	double medianChi2 = toy_chi2[(int)(((float)ntoys)/2)];
     double rms = TMath::Sqrt(medianChi2);
 
     TH1F toyhist(Form("gofTest_%s.pdf",pdf->GetName()),";Chi2;",50,medianChi2-5*rms,medianChi2+5*rms);
@@ -327,6 +327,8 @@ void plot(RooRealVar *mass, RooAbsPdf *pdf, RooDataSet *data, string name,vector
 
  // data->plotOn(plot,Binning(80));
   TCanvas *canv = new TCanvas();
+  canv->SetLogy();
+  canv->SetLogx();
   pdf->plotOn(plot);//,RooFit::NormRange("fitdata_1,fitdata_2"));
   pdf->paramOn(plot,RooFit::Layout(0.34,0.96,0.89),RooFit::Format("NEA",AutoPrecision(1)));
   if (BLIND) plot->SetMinimum(0.0001);
@@ -349,6 +351,8 @@ void plot(RooRealVar *mass, RooMultiPdf *pdfs, RooCategory *catIndex, RooDataSet
   
   int color[7] = {kBlue,kRed,kMagenta,kGreen+1,kOrange+7,kAzure+10,kBlack};
   TCanvas *canv = new TCanvas();
+  canv->SetLogy();
+  canv->SetLogx();
   TLegend *leg = new TLegend(0.5,0.55,0.92,0.92);
   leg->SetFillColor(0);
   leg->SetLineColor(1);
@@ -389,6 +393,7 @@ void plot(RooRealVar *mass, RooMultiPdf *pdfs, RooCategory *catIndex, RooDataSet
   leg->Draw("same");
   canv->SaveAs(Form("%s.pdf",name.c_str()));
   canv->SaveAs(Form("%s.png",name.c_str()));
+  canv->SaveAs(Form("%s.root",name.c_str()));
   catIndex->setIndex(currentIndex);
   delete canv;
 }
@@ -397,6 +402,8 @@ void plot(RooRealVar *mass, map<string,RooAbsPdf*> pdfs, RooDataSet *data, strin
   
   int color[7] = {kBlue,kRed,kMagenta,kGreen+1,kOrange+7,kAzure+10,kBlack};
   TCanvas *canv = new TCanvas();
+  canv->SetLogy();
+  canv->SetLogx();
   TLegend *leg = new TLegend(0.6,0.65,0.89,0.89);
   leg->SetFillColor(0);
   leg->SetLineColor(0);
@@ -436,6 +443,7 @@ void plot(RooRealVar *mass, map<string,RooAbsPdf*> pdfs, RooDataSet *data, strin
   leg->Draw("same");
   canv->SaveAs(Form("%s.pdf",name.c_str()));
   canv->SaveAs(Form("%s.png",name.c_str()));
+  canv->SaveAs(Form("%s.root",name.c_str()));
   delete canv;
 }
 
@@ -557,7 +565,7 @@ vector<string> diphotonCats_;
     ("runFtestCheckWithToys", 									"When running the F-test, use toys to calculate pvals (and make plots) ")
     ("unblind",  									        "Dont blind plots")
     ("isData",    								    	        "Use Data not MC-based pseudodata ")
-		("diphotonCats,f", po::value<string>(&diphotonCatsStr_)->default_value("EBEE,EBEB"),       "Flashgg category names to consider")
+		("diphotonCats,f", po::value<string>(&diphotonCatsStr_)->default_value("EBEB,EBEE"),       "Flashgg category names to consider")
     ("verbose,v",                                                                               "Run with more output")
   ;
   po::variables_map vm;
@@ -610,18 +618,18 @@ vector<string> diphotonCats_;
 	}
 	vector<string> functionClasses;
 //	functionClasses.push_back("DijetSimple");
-	functionClasses.push_back("Dijet");
-	functionClasses.push_back("Bernstein");
+    functionClasses.push_back("Dijet");
+//	functionClasses.push_back("Bernstein");
 	functionClasses.push_back("Exponential");
-	functionClasses.push_back("PowerLaw");
-	functionClasses.push_back("Laurent");
+ 	functionClasses.push_back("PowerLaw");
+//	functionClasses.push_back("Laurent");
 	map<string,string> namingMap;
 //	namingMap.insert(pair<string,string>("DijetSimple","dijetsimp"));
 	namingMap.insert(pair<string,string>("Dijet","dijet"));
-	namingMap.insert(pair<string,string>("Bernstein","pol"));
+//	namingMap.insert(pair<string,string>("Bernstein","pol"));
 	namingMap.insert(pair<string,string>("Exponential","exp"));
 	namingMap.insert(pair<string,string>("PowerLaw","pow"));
-	namingMap.insert(pair<string,string>("Laurent","lau"));
+//	namingMap.insert(pair<string,string>("Laurent","lau"));
 	// store results here
 
 	FILE *resFile ;
@@ -697,7 +705,8 @@ vector<string> diphotonCats_;
 
 			int counter =0;
 			//	while (prob<0.05){
-			while (prob<0.05 && order < 7){ //FIXME is order 7 appropriate ?
+			while (prob<0.05 && order < 5){ //FIXME should be around order 3
+				cout << "ORDER      " << order   << endl;
 				RooAbsPdf *bkgPdf = getPdf(pdfsModel,*funcType,order,Form("ftest_pdf_%d_%s",cat,sqrts_.c_str()));
 				if (!bkgPdf){
 					// assume this order is not allowed
@@ -721,7 +730,7 @@ vector<string> diphotonCats_;
 					}
 					double gofProb=0;
 					// otherwise we get it later ...
-					if (!saveMultiPdf) plot(mass,bkgPdf,data,Form("%s/%s%d_cat%d.pdf",outDir.c_str(),funcType->c_str(),order,cat),diphotonCats_,fitStatus,&gofProb);
+					if (!saveMultiPdf) plot(mass,bkgPdf,data,Form("%s/%s%d_cat%d.png",outDir.c_str(),funcType->c_str(),order,cat),diphotonCats_,fitStatus,&gofProb);
 					cout << "[INFO]\t " << *funcType << " " << order << " " << prevNll << " " << thisNll << " " << chi2 << " " << prob << endl;
 					//fprintf(resFile,"%15s && %d && %10.2f && %10.2f && %10.2f \\\\\n",funcType->c_str(),order,thisNll,chi2,prob);
 					prevNll=thisNll;

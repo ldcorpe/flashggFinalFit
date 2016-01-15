@@ -374,30 +374,25 @@ RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
     return NULL;
   }
   else {
+	cout << "in dijet function : order" << order << endl;
     string formula_exp="";
     string formula=""; 
     RooArgList *dependents = new RooArgList();
     dependents->add(*obs_var);
   	for (int i=1; i<=order; i++){
-		//just to debug
-		if(order==2) {
-			string logc1 =  Form("%s_log%d",prefix.c_str(),1);
-    		params.insert(pair<string,RooRealVar*>(logc1, new RooRealVar(logc1.c_str(),logc1.c_str(),5.0,-10.0,10.)));
-			string logc2 =  Form("%s_log%d",prefix.c_str(),2);
-    		params.insert(pair<string,RooRealVar*>(logc2, new RooRealVar(logc2.c_str(),logc2.c_str(),-0.8,-10.0,10.)));
-			dependents->add(*params[logc1]);
-			dependents->add(*params[logc2]);
+		string logc =  Form("%s_log%d",prefix.c_str(),i);
+		if(order ==3 && i==1) {
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-4.6,-10.0,10.)));
 		}
-		if(order==3) {
-			string logc1 =  Form("%s_log%d",prefix.c_str(),1);
-    		params.insert(pair<string,RooRealVar*>(logc1, new RooRealVar(logc1.c_str(),logc1.c_str(),-5.0,-10.0,10.)));
-			string logc2 =  Form("%s_log%d",prefix.c_str(),2);
-    		params.insert(pair<string,RooRealVar*>(logc2, new RooRealVar(logc2.c_str(),logc2.c_str(),2.6,-10.0,10.)));
-			string logc3 =  Form("%s_log%d",prefix.c_str(),3);
-    		params.insert(pair<string,RooRealVar*>(logc3, new RooRealVar(logc3.c_str(),logc2.c_str(),-0.3,-10.0,10.)));
-			dependents->add(*params[logc1]);
-			dependents->add(*params[logc2]);
-			dependents->add(*params[logc3]);
+		if(order==3 && i==2) {
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),3.0,-10.0,10.)));
+		}
+		
+		if(order ==3 && i==3) {
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-0.3,-10.0,10.)));
+		}
+		else{
+			params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-4.6,-100.0,100.0)));
 		}
 		if (i==1){
 			formula_exp = Form("  (@%d*TMath::Power(log(@0),%d))",i,i);
@@ -406,15 +401,16 @@ RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
 		else{
 			formula_exp += Form(" + (@%d*TMath::Power(log(@0),%d))",i,i);
 		}
+		dependents->add(*params[logc]);
+	}
 	//	std::cout << "order" << i << std::endl;
 //		dependents->Print() ;
 //		std::cout << "formula " << formula_exp << std::endl;
-  	}  
  	//see if string like that works 
   	formula= Form("TMath::Exp(%s)",formula_exp.c_str()) ; 
  //   std::cout <<"formula :" <<formula << std::endl;
   	RooGenericPdf* dijet = new RooGenericPdf(prefix.c_str(), prefix.c_str(), formula.c_str(),*dependents );
-    dijet->Print();
+  //  dijet->Print();
   
 	return dijet;
   }
@@ -542,6 +538,8 @@ RooAbsPdf* PdfModelBuilder::getSigPdf(){
 void PdfModelBuilder::plotPdfsToData(RooAbsData *data, int binning, string name, bool bkgOnly,string specificPdfName){
   
   TCanvas *canv = new TCanvas();
+  canv->SetLogy();
+  canv->SetLogx();
   bool specPdf=false;
   if (specificPdfName!="") specPdf=true;
 
@@ -559,6 +557,7 @@ void PdfModelBuilder::plotPdfsToData(RooAbsData *data, int binning, string name,
     }	
     plot->Draw();
     canv->Print(Form("%s_%s.pdf",name.c_str(),it->first.c_str()));
+    canv->Print(Form("%s_%s.root",name.c_str(),it->first.c_str()));
     canv->Print(Form("%s_%s.png",name.c_str(),it->first.c_str()));
   }
   delete canv;
@@ -735,6 +734,8 @@ void PdfModelBuilder::plotHybridToy(string prefix, int binning, vector<float> sw
   
   RooPlot *plot = obs_var->frame();
   TCanvas *canv = new TCanvas();
+  canv->SetLogy();
+  canv->SetLogx();
   int i=0;
   for (vector<string>::iterator func=functions.begin(); func!=functions.end(); func++){
     for (map<string,RooAbsPdf*>::iterator pdfIt = pdfSet.begin(); pdfIt != pdfSet.end(); pdfIt++){
@@ -757,6 +758,8 @@ void PdfModelBuilder::plotHybridToy(string prefix, int binning, vector<float> sw
     plot->SetMinimum(0.0001);
     plot->Draw();
     canv->Print(Form("%s_%s.pdf",prefix.c_str(),hybrid->first.c_str()));
+    canv->Print(Form("%s_%s.png",prefix.c_str(),hybrid->first.c_str()));
+    canv->Print(Form("%s_%s.root",prefix.c_str(),hybrid->first.c_str()));
   }
   delete canv;
 }
@@ -771,6 +774,8 @@ void PdfModelBuilder::plotToysWithPdfs(string prefix, int binning, bool bkgOnly)
     pdfSet = sbPdfs;
   }
   TCanvas *canv = new TCanvas();
+  canv->SetLogy();
+  canv->SetLogx();
   for (map<string,RooAbsPdf*>::iterator pdfIt = pdfSet.begin(); pdfIt != pdfSet.end(); pdfIt++){
     for (map<string,RooAbsData*>::iterator toyIt = toyData.begin(); toyIt != toyData.end(); toyIt++){
       //cout << "pdf: " << pdfIt->first << " - toy: " << toyIt->first << endl; 
@@ -782,6 +787,7 @@ void PdfModelBuilder::plotToysWithPdfs(string prefix, int binning, bool bkgOnly)
         plot->Draw();
         canv->Print(Form("%s_%s.pdf",prefix.c_str(),pdfIt->first.c_str()));
         canv->Print(Form("%s_%s.png",prefix.c_str(),pdfIt->first.c_str()));
+        canv->Print(Form("%s_%s.root",prefix.c_str(),pdfIt->first.c_str()));
       }
     }
   }
