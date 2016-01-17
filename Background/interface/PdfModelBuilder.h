@@ -55,7 +55,6 @@ class PdfModelBuilder {
     void saveWorkspace(TFile* file);
     void saveWorkspace(string filename);
 
-    RooAbsPdf* getBernstein(string prefix, int order);
     RooAbsPdf* getChebychev(string prefix, int order);
     RooAbsPdf* getPowerLaw(string prefix, int order);
     RooAbsPdf* getPowerLawSingle(string prefix, int order);
@@ -65,6 +64,9 @@ class PdfModelBuilder {
     RooAbsPdf* getLaurentSeries(string prefix, int order);
     RooAbsPdf* getDijet(string prefix,int order);
     RooAbsPdf* getDijetSimple(string prefix,int order);
+    RooAbsPdf* getAtlas(string prefix,int order);
+    RooAbsPdf* getBernstein(string prefix,int order);
+    RooAbsPdf* getExpow(string prefix,int order);
     RooAbsPdf* getKeysPdf(string prefix);
     RooAbsPdf* getPdfFromFile(string &prefix);
 

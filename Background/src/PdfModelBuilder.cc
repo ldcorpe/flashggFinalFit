@@ -72,6 +72,10 @@ void PdfModelBuilder::setSignalModifierConstant(bool val){
 }
 
 RooAbsPdf* PdfModelBuilder::getChebychev(string prefix, int order){
+  if(order<1){
+    cerr << "[WARNING] -- needs to be at least of order 1" << endl;
+    return NULL;
+  }
   
   RooArgList *coeffList = new RooArgList();
   for (int i=0; i<order; i++){
@@ -91,6 +95,10 @@ RooAbsPdf* PdfModelBuilder::getChebychev(string prefix, int order){
 }
 
 RooAbsPdf* PdfModelBuilder::getBernstein(string prefix, int order){
+  if(order<1){
+    cerr << "[WARNING] --  needs to be at least of order 1" << endl;
+    return NULL;
+  }
   
   RooArgList *coeffList = new RooArgList();
   //coeffList->add(RooConst(1.0)); // no need for cnstant in this interface
@@ -134,6 +142,10 @@ RooAbsPdf* PdfModelBuilder::getBernstein(string prefix, int order){
 }
 
 RooAbsPdf* PdfModelBuilder::getPowerLawGeneric(string prefix, int order){
+  if(order<1){
+    cerr << "[WARNING] --needs to be at least of order 1" << endl;
+    return NULL;
+  }
   
   if (order%2==0){
     cerr << "ERROR -- addPowerLaw -- only odd number of params allowed" << endl;
@@ -181,6 +193,10 @@ RooAbsPdf* PdfModelBuilder::getPowerLawGeneric(string prefix, int order){
 }
 
 RooAbsPdf* PdfModelBuilder::getPowerLaw(string prefix, int order){
+  if(order<1){
+    cerr << "[WARNING] -- needs to be at least of order 1" << endl;
+    return NULL;
+  }
   
   RooArgList coefList;
   for (int i=0; i<order; i++){
@@ -203,6 +219,10 @@ RooAbsPdf* PdfModelBuilder::getPowerLaw(string prefix, int order){
 
 RooAbsPdf* PdfModelBuilder::getExponential(string prefix, int order){
   
+  if(order<1){
+    cerr << "[WARNING] -- needs to be at least of order 1" << endl;
+    return NULL;
+  }
   RooArgList coefList;
   for (int i=0; i<order; i++){
     double start=-1.;
@@ -223,6 +243,10 @@ RooAbsPdf* PdfModelBuilder::getExponential(string prefix, int order){
 }
 
 RooAbsPdf* PdfModelBuilder::getPowerLawSingle(string prefix, int order){
+  if(order<1){
+    cerr << "[WARNING] -- needs to be at least of order 1" << endl;
+    return NULL;
+  }
   
   if (order%2==0){
     cerr << "ERROR -- addPowerLaw -- only odd number of params allowed" << endl;
@@ -260,6 +284,10 @@ RooAbsPdf* PdfModelBuilder::getPowerLawSingle(string prefix, int order){
 }
 
 RooAbsPdf* PdfModelBuilder::getLaurentSeries(string prefix, int order){
+  if(order<1){
+    cerr << "[WARNING] --  needs to be at least of order 1" << endl;
+    return NULL;
+  }
  
   int nlower=int(ceil(order/2.));
   int nhigher=order-nlower;
@@ -332,6 +360,10 @@ RooAbsPdf* PdfModelBuilder::getPdfFromFile(string &prefix){
 }
 
 RooAbsPdf* PdfModelBuilder::getExponentialSingle(string prefix, int order){
+  if(order<1){
+    cerr << "[WARNING] --  needs to be at least of order 1" << endl;
+    return NULL;
+  }
   
   if (order%2==0){
     cerr << "ERROR -- addExponential -- only odd number of params allowed" << endl;
@@ -367,6 +399,30 @@ RooAbsPdf* PdfModelBuilder::getExponentialSingle(string prefix, int order){
 }
 //MQ
 //number of functions
+RooAbsPdf* PdfModelBuilder::getAtlas(string prefix, int order){
+    string formula_exp="";
+    string formula=""; 
+    RooArgList *dependents = new RooArgList();
+    dependents->add(*obs_var);
+    string coeff1 =  Form("%s_coeff1",prefix.c_str());
+    params.insert(pair<string,RooRealVar*>(coeff1, new RooRealVar(coeff1.c_str(),coeff1.c_str(),-2. ,-200.0,-2.)));
+    dependents->add(*params[coeff1]);
+  	for (int i=0; i<=order; i++){
+		string logc =  Form("%s_log%d",prefix.c_str(),i);
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-0.5,-100.0,100.)));
+		if (i==0){
+			formula_exp = Form("@2");
+		}
+		else{
+			formula_exp += Form(" + (@%d*TMath::Power(log(@0/13000),%d))",i+2,i);
+		}
+		dependents->add(*params[logc]);
+	}
+  	formula= Form("TMath::Power(1-TMath::Power(@0/13000,1/3),@1)*TMath::Power(@0/13000,%s)",formula_exp.c_str()) ; 
+  	RooGenericPdf* atlas = new RooGenericPdf(prefix.c_str(), prefix.c_str(), formula.c_str(),*dependents );
+	return atlas;
+}
+
 
 RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
   if(order<1){
@@ -374,14 +430,13 @@ RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
     return NULL;
   }
   else {
-	cout << "in dijet function : order" << order << endl;
     string formula_exp="";
     string formula=""; 
     RooArgList *dependents = new RooArgList();
     dependents->add(*obs_var);
   	for (int i=1; i<=order; i++){
 		string logc =  Form("%s_log%d",prefix.c_str(),i);
-		if(order ==3 && i==1) {
+		if(order ==3 && i==1) {//FIXME make setVal nicer
     	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-4.6,-10.0,10.)));
 		}
 		if(order==3 && i==2) {
@@ -396,25 +451,47 @@ RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
 		}
 		if (i==1){
 			formula_exp = Form("  (@%d*TMath::Power(log(@0),%d))",i,i);
-		
 		}
 		else{
 			formula_exp += Form(" + (@%d*TMath::Power(log(@0),%d))",i,i);
 		}
 		dependents->add(*params[logc]);
 	}
-	//	std::cout << "order" << i << std::endl;
-//		dependents->Print() ;
-//		std::cout << "formula " << formula_exp << std::endl;
- 	//see if string like that works 
   	formula= Form("TMath::Exp(%s)",formula_exp.c_str()) ; 
- //   std::cout <<"formula :" <<formula << std::endl;
   	RooGenericPdf* dijet = new RooGenericPdf(prefix.c_str(), prefix.c_str(), formula.c_str(),*dependents );
-  //  dijet->Print();
-  
 	return dijet;
   }
-
+}
+RooAbsPdf* PdfModelBuilder::getExpow(string prefix, int order){
+    if(order<1){
+    	cerr << "[WARNING] -- dijet needs to be at least of order 1" << endl;
+    	return NULL;
+    }
+	else{
+		string formula_exp="";
+		string formula_pow="";
+		string formula="";
+		RooArgList *dependents = new RooArgList();
+		dependents->add(*obs_var);
+    	for (int i=1; i<=order; i++){
+			string expc =  Form("%s_exp%d",prefix.c_str(),i);
+			params.insert(pair<string,RooRealVar*>(expc, new RooRealVar(expc.c_str(),expc.c_str(),5.,-100.0,100.)));
+			string powc =  Form("%s_pow%d",prefix.c_str(),i);
+			params.insert(pair<string,RooRealVar*>(powc, new RooRealVar(powc.c_str(),powc.c_str(),-1.,-100.0,100.)));
+			if (i==1){
+				formula_exp = Form("  (@%d*@0)",i);
+			}
+			else{
+				formula_exp = Form(" + @%d*TMath::Power(@0,%d)",i,i);
+			}
+			formula_pow = Form("  (@%d*@0)",i+1);
+			dependents->add(*params[expc]);
+			dependents->add(*params[powc]);
+		}
+  		formula= Form("TMath::Exp(%s)*TMath:Power(@0,%s)",formula_exp.c_str(),formula_pow.c_str()) ; 
+		RooGenericPdf* expow = new RooGenericPdf(prefix.c_str(), prefix.c_str(),formula.c_str(),*dependents );
+		return expow;
+	}
 }
 
 RooAbsPdf* PdfModelBuilder::getDijetSimple(string prefix, int order){
@@ -434,7 +511,9 @@ RooAbsPdf* PdfModelBuilder::getDijetSimple(string prefix, int order){
 	}
 	else {return NULL;}
 	}
-	void PdfModelBuilder::addBkgPdf(string type, int nParams, string name, bool cache){
+	
+
+void PdfModelBuilder::addBkgPdf(string type, int nParams, string name, bool cache){
 	 
 	  if (!obs_var_set){
 		cerr << "ERROR -- obs Var has not been set!" << endl;
@@ -456,6 +535,8 @@ RooAbsPdf* PdfModelBuilder::getDijetSimple(string prefix, int order){
   if (type=="Laurent") pdf = getLaurentSeries(name,nParams);
   if (type=="DijetSimple") pdf = getDijetSimple(name,nParams);
   if (type=="Dijet") pdf = getDijet(name,nParams);
+  if (type=="Expow") pdf = getExpow(name,nParams);
+  if (type=="Atlas" pdf = getAtlas(name,nParams);
   if (type=="KeysPdf") pdf = getKeysPdf(name);
   if (type=="File") pdf = getPdfFromFile(name);
 

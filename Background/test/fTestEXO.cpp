@@ -57,10 +57,10 @@ int nBinsForMass = 100;
 TRandom3 *RandomGen = new TRandom3();
 
 RooAbsPdf* getPdf(PdfModelBuilder &pdfsModel, string type, int order, const char* ext=""){
-  
   if (type=="DijetSimple") return pdfsModel.getDijetSimple(Form("%s_dijetsimple%d",ext,order),order); 
   else if (type=="Dijet") return pdfsModel.getDijet(Form("%s_dijet%d",ext,order),order); 
-  else if (type=="Bernstein") return pdfsModel.getBernstein(Form("%s_bern%d",ext,order),order); 
+  else if (type=="Atlas") return pdfsModel.getAtlas(Form("%s_atlas%d",ext,order),order); 
+  else if (type=="Expow") return pdfsModel.getExpow(Form("%s_expow%d",ext,order),order); 
   else if (type=="Chebychev") return pdfsModel.getChebychev(Form("%s_cheb%d",ext,order),order); 
   else if (type=="Exponential") return pdfsModel.getExponentialSingle(Form("%s_exp%d",ext,order),order); 
   else if (type=="PowerLaw") return pdfsModel.getPowerLawSingle(Form("%s_pow%d",ext,order),order); 
@@ -619,17 +619,19 @@ vector<string> diphotonCats_;
 	vector<string> functionClasses;
 //	functionClasses.push_back("DijetSimple");
     functionClasses.push_back("Dijet");
-//	functionClasses.push_back("Bernstein");
 	functionClasses.push_back("Exponential");
- 	functionClasses.push_back("PowerLaw");
-//	functionClasses.push_back("Laurent");
+	functionClasses.push_back("Expow");
+// 	functionClasses.push_back("PowerLaw");
+	functionClasses.push_back("Laurent");
+	functionClasses.push_back("Atlas");
 	map<string,string> namingMap;
 //	namingMap.insert(pair<string,string>("DijetSimple","dijetsimp"));
 	namingMap.insert(pair<string,string>("Dijet","dijet"));
-//	namingMap.insert(pair<string,string>("Bernstein","pol"));
+	namingMap.insert(pair<string,string>("Atlas","atlas"));
 	namingMap.insert(pair<string,string>("Exponential","exp"));
-	namingMap.insert(pair<string,string>("PowerLaw","pow"));
-//	namingMap.insert(pair<string,string>("Laurent","lau"));
+	namingMap.insert(pair<string,string>("Expow","expow"));
+//   	namingMap.insert(pair<string,string>("PowerLaw","pow"));
+	namingMap.insert(pair<string,string>("Laurent","lau"));
 	// store results here
 
 	FILE *resFile ;
@@ -697,7 +699,7 @@ vector<string> diphotonCats_;
 				funcType!=functionClasses.end(); funcType++){
 
 			double thisNll=0.; double prevNll=0.; double chi2=0.; double prob=0.; 
-			int order=1; int prev_order=0; int cache_order=0;
+			int order=0; int prev_order=0; int cache_order=0;
 
 			RooAbsPdf *prev_pdf=NULL;
 			RooAbsPdf *cache_pdf=NULL;
