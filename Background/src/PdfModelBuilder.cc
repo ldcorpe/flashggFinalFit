@@ -473,22 +473,22 @@ RooAbsPdf* PdfModelBuilder::getExpow(string prefix, int order){
 		string formula="";
 		RooArgList *dependents = new RooArgList();
 		dependents->add(*obs_var);
+		string powc =  Form("%s_pow",prefix.c_str());
+		params.insert(pair<string,RooRealVar*>(powc, new RooRealVar(powc.c_str(),powc.c_str(),-1.,-100.0,100.)));
+		dependents->add(*params[powc]);
     	for (int i=1; i<=order; i++){
 			string expc =  Form("%s_exp%d",prefix.c_str(),i);
 			params.insert(pair<string,RooRealVar*>(expc, new RooRealVar(expc.c_str(),expc.c_str(),5.,-100.0,100.)));
-			string powc =  Form("%s_pow%d",prefix.c_str(),i);
-			params.insert(pair<string,RooRealVar*>(powc, new RooRealVar(powc.c_str(),powc.c_str(),-1.,-100.0,100.)));
 			if (i==1){
-				formula_exp = Form("  (@%d*@0)",i);
+				formula_exp = Form("  @%d*@0)",i+1);
 			}
 			else{
-				formula_exp = Form(" + @%d*TMath::Power(@0,%d)",i,i);
+				formula_exp += Form(" + @%d*TMath::Power(@0,%d)",i+1,i);
 			}
-			formula_pow = Form("  (@%d*@0)",i+1);
 			dependents->add(*params[expc]);
-			dependents->add(*params[powc]);
 		}
-  		formula= Form("TMath::Exp(%s)*TMath:Power(@0,%s)",formula_exp.c_str(),formula_pow.c_str()) ; 
+		dependents->Print("v");
+  		formula= Form("TMath:Power(@0,@1)*TMath::Exp(%s)",formula_exp.c_str()) ; 
 		RooGenericPdf* expow = new RooGenericPdf(prefix.c_str(), prefix.c_str(),formula.c_str(),*dependents );
 		return expow;
 	}
@@ -536,7 +536,7 @@ void PdfModelBuilder::addBkgPdf(string type, int nParams, string name, bool cach
   if (type=="DijetSimple") pdf = getDijetSimple(name,nParams);
   if (type=="Dijet") pdf = getDijet(name,nParams);
   if (type=="Expow") pdf = getExpow(name,nParams);
-  if (type=="Atlas" pdf = getAtlas(name,nParams);
+  if (type=="Atlas") pdf = getAtlas(name,nParams);
   if (type=="KeysPdf") pdf = getKeysPdf(name);
   if (type=="File") pdf = getPdfFromFile(name);
 

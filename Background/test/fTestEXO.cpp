@@ -595,7 +595,7 @@ vector<string> diphotonCats_;
 
   if (saveMultiPdf){
 	outputfile = new TFile(outfilename.c_str(),"RECREATE");
-	outputws = new RooWorkspace(); outputws->SetName("multipdf");
+	outputws = new RooWorkspace(); outputws->SetName("wtemplates");
   }
 
   system(Form("mkdir -p %s",outDir.c_str()));
@@ -620,7 +620,7 @@ vector<string> diphotonCats_;
 //	functionClasses.push_back("DijetSimple");
     functionClasses.push_back("Dijet");
 	functionClasses.push_back("Exponential");
-	functionClasses.push_back("Expow");
+//	functionClasses.push_back("Expow");
 // 	functionClasses.push_back("PowerLaw");
 	functionClasses.push_back("Laurent");
 	functionClasses.push_back("Atlas");
@@ -629,7 +629,7 @@ vector<string> diphotonCats_;
 	namingMap.insert(pair<string,string>("Dijet","dijet"));
 	namingMap.insert(pair<string,string>("Atlas","atlas"));
 	namingMap.insert(pair<string,string>("Exponential","exp"));
-	namingMap.insert(pair<string,string>("Expow","expow"));
+//	namingMap.insert(pair<string,string>("Expow","expow"));
 //   	namingMap.insert(pair<string,string>("PowerLaw","pow"));
 	namingMap.insert(pair<string,string>("Laurent","lau"));
 	// store results here
@@ -682,8 +682,8 @@ vector<string> diphotonCats_;
 
 		RooDataSet *data;
 		string thisdataBinned_name;
-		thisdataBinned_name =Form("roohist_data_mass_%s",diphotonCats_[cat].c_str());
-		thisdataBinned_name =Form("roohist_data_mass_%s",diphotonCats_[cat].c_str());
+		thisdataBinned_name =Form("data_%s",diphotonCats_[cat].c_str());
+		thisdataBinned_name =Form("data_%s",diphotonCats_[cat].c_str());
 		RooDataHist thisdataBinned(thisdataBinned_name.c_str(),"data",*mass,*dataFull);
 		data = (RooDataSet*)&thisdataBinned;
 
@@ -832,11 +832,11 @@ vector<string> diphotonCats_;
 			// Put selectedModels into a MultiPdf
 			string catindexname;
 			string catname;
-				catindexname = Form("pdfindex_%s_%s",diphotonCats_[cat].c_str(),sqrts_.c_str());
+				catindexname = Form("pdfindex_%s",diphotonCats_[cat].c_str());
 				catname = Form("%s",diphotonCats_[cat].c_str());
 			RooCategory catIndex(catindexname.c_str(),"c");
-			RooMultiPdf *pdf = new RooMultiPdf(Form("CMS_hgg_%s_%s_bkgshape",catname.c_str(),sqrts_.c_str()),"all pdfs",catIndex,storedPdfs);
-			RooRealVar nBackground(Form("CMS_hgg_%s_%s_bkgshape_norm",catname.c_str(),sqrts_.c_str()),"nbkg",data->sumEntries(),0,10E8);
+			RooMultiPdf *pdf = new RooMultiPdf(Form("model_bkg_%s",catname.c_str()),"all pdfs",catIndex,storedPdfs);
+			RooRealVar nBackground(Form("model_bkg_%s_norm",catname.c_str()),"nbkg",data->sumEntries(),0,10E8);
 			//nBackground.removeRange(); // bug in roofit will break combine until dev branch brought in
 			//double check the best pdf!
 			int bestFitPdfIndex = getBestFitFunction(pdf,data,&catIndex,!verbose);
@@ -849,7 +849,7 @@ vector<string> diphotonCats_;
 			std::cout << "[INFO] Simple check of index "<< simplebestFitPdfIndex <<std::endl;
 
 			mass->setBins(nBinsForMass);
-			RooDataHist dataBinned(Form("roohist_data_mass_%s",catname.c_str()),"data",*mass,*dataFull);
+			RooDataHist dataBinned(Form("data_%s",catname.c_str()),"data",*mass,*dataFull);
 
 			// Save it (also a binned version of the dataset
 			outputws->import(*pdf);
