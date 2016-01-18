@@ -63,6 +63,7 @@ RooAbsPdf* getPdf(PdfModelBuilder &pdfsModel, string type, int order, const char
   else if (type=="Expow") return pdfsModel.getExpow(Form("%s_expow%d",ext,order),order); 
   else if (type=="Chebychev") return pdfsModel.getChebychev(Form("%s_cheb%d",ext,order),order); 
   else if (type=="Exponential") return pdfsModel.getExponentialSingle(Form("%s_exp%d",ext,order),order); 
+  else if (type=="Expow") return pdfsModel.getExpow(Form("%s_expow%d",ext,order),order); 
   else if (type=="PowerLaw") return pdfsModel.getPowerLawSingle(Form("%s_pow%d",ext,order),order); 
   else if (type=="Laurent") return pdfsModel.getLaurentSeries(Form("%s_lau%d",ext,order),order); 
   else {
@@ -641,15 +642,18 @@ vector<string> diphotonCats_;
 	vector<map<string,RooAbsPdf*> > pdfs_vec;
 
 	PdfModelBuilder pdfsModel;
-	//RooRealVar *mass = (RooRealVar*)inWS->var("mass");
-  RooRealVar *mass = new RooRealVar ("mass","mass", 300, 1600);
-	pdfsModel.setObsVar(mass);
+	
 	double upperEnvThreshold = 0.1; // upper threshold on delta(chi2) to include function in envelope (looser than truth function)
 
 	fprintf(resFile,"Truth Model & d.o.f & $\\Delta NLL_{N+1}$ & $p(\\chi^{2}>\\chi^{2}_{(N\\rightarrow N+1)})$ \\\\\n");
 	fprintf(resFile,"\\hline\n");
 
 	for (int cat=startingCategory; cat<ncats; cat++){
+	string catname;
+	catname = Form("%s",diphotonCats_[cat].c_str());
+    RooRealVar *mass = new RooRealVar (Form("mgg%s",catname.c_str()),Form("mgg%s",catname.c_str()), 200, 1600);
+//	RooRealVar *mass = (RooRealVar*)inWS->var(Form("mgg%s",catname.c_str()));
+	pdfsModel.setObsVar(mass);
 
   TNtuple *inNT;
 		if (isData_){
@@ -660,15 +664,16 @@ vector<string> diphotonCats_;
 	if(diphotonCats_[cat]=="EBEE") mass->setRange(320,1600); //FIXME Need a more configurable method to set range
 	if(diphotonCats_[cat]=="EBEB") mass->setRange(230,1600); //FIXME Need a more configurable method to set range
 	mass->setBins(nBinsForMass);
+	cout << "-------------------------------------------------------------------------------" << endl;
+	cout << "right mass loaded? " << endl;
+	mass->Print("v");
 
 	if (verbose) std::cout << "[INFO]  considering nTuple " << inNT->GetName() << std::endl;
 		map<string,int> choices;
 		map<string,std::vector<int> > choices_envelope;
 		map<string,RooAbsPdf*> pdfs;
 		map<string,RooAbsPdf*> allPdfs;
-		string catname;
-	  catname = Form("%s",diphotonCats_[cat].c_str());
-		RooDataSet *dataFull = new RooDataSet( "dataFull","dataFull", inNT , RooArgSet(*mass) );
+		RooDataSet *dataFull = new RooDataSet( Form("data_%s",catname.c_str()),"data_unbinned" ,inNT, RooArgSet(*mass) );
 
  		if (dataFull){
 		std::cout << "[INFO] opened data for  "  << dataFull->GetName()  <<" - " << dataFull <<std::endl;
@@ -682,8 +687,8 @@ vector<string> diphotonCats_;
 
 		RooDataSet *data;
 		string thisdataBinned_name;
-		thisdataBinned_name =Form("data_%s",diphotonCats_[cat].c_str());
-		thisdataBinned_name =Form("data_%s",diphotonCats_[cat].c_str());
+		thisdataBinned_name =Form("data_binned_%s",diphotonCats_[cat].c_str());
+		thisdataBinned_name =Form("data_binned_%s",diphotonCats_[cat].c_str());
 		RooDataHist thisdataBinned(thisdataBinned_name.c_str(),"data",*mass,*dataFull);
 		data = (RooDataSet*)&thisdataBinned;
 
@@ -849,7 +854,7 @@ vector<string> diphotonCats_;
 			std::cout << "[INFO] Simple check of index "<< simplebestFitPdfIndex <<std::endl;
 
 			mass->setBins(nBinsForMass);
-			RooDataHist dataBinned(Form("data_%s",catname.c_str()),"data",*mass,*dataFull);
+			RooDataHist dataBinned(Form("data_binned_%s",catname.c_str()),"data",*mass,*dataFull);
 
 			// Save it (also a binned version of the dataset
 			outputws->import(*pdf);
@@ -857,6 +862,7 @@ vector<string> diphotonCats_;
 			outputws->import(catIndex);
 			outputws->import(dataBinned);
 			outputws->import(*data);
+			outputws->import(*dataFull);
 			plot(mass,pdf,&catIndex,data,Form("%s/multipdf_%s",outDir.c_str(),catname.c_str()),diphotonCats_,cat,bestFitPdfIndex);
 
 		}
