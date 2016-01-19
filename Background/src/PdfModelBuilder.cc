@@ -426,7 +426,7 @@ RooAbsPdf* PdfModelBuilder::getAtlas(string prefix, int order){
 
 RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
   if(order<1){
-    cerr << "[WARNING] -- dijet needs to be at least of order 1" << endl;
+    cerr << "[INFO] -- dijet needs to be at least of order 1" << endl;
     return NULL;
   }
   else {
@@ -436,7 +436,15 @@ RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
     dependents->add(*obs_var);
   	for (int i=1; i<=order; i++){
 		string logc =  Form("%s_log%d",prefix.c_str(),i);
-		if(order ==3 && i==1) {//FIXME make setVal nicer
+/*
+                if(order ==2 && i==1) {//FIXME make setVal nicer
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),5.3,4.0,6.)));
+		}
+		if(order==2 && i==2) {
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-0.8,-1.0,-0.6)));
+		}
+	
+                if(order ==3 && i==1) {//FIXME make setVal nicer
     	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-4.6,-10.0,10.)));
 		}
 		if(order==3 && i==2) {
@@ -445,10 +453,12 @@ RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
 		
 		if(order ==3 && i==3) {
     	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-0.3,-10.0,10.)));
-		}
+	
+        }
 		else{
-			params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-4.6,-100.0,100.0)));
-		}
+  */
+                    params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-4.6,-100.0,100.0)));
+//		}
 		if (i==1){
 			formula_exp = Form("  (@%d*TMath::Power(log(@0),%d))",i,i);
 		}
@@ -487,7 +497,7 @@ RooAbsPdf* PdfModelBuilder::getExpow(string prefix, int order){
 			}
 			dependents->add(*params[expc]);
 		}
-		dependents->Print("v");
+	   	dependents->Print("v");
   		formula= Form("TMath:Power(@0,@1)*TMath::Exp(%s)",formula_exp.c_str()) ; 
 		RooGenericPdf* expow = new RooGenericPdf(prefix.c_str(), prefix.c_str(),formula.c_str(),*dependents );
 		return expow;

@@ -63,7 +63,6 @@ RooAbsPdf* getPdf(PdfModelBuilder &pdfsModel, string type, int order, const char
   else if (type=="Expow") return pdfsModel.getExpow(Form("%s_expow%d",ext,order),order); 
   else if (type=="Chebychev") return pdfsModel.getChebychev(Form("%s_cheb%d",ext,order),order); 
   else if (type=="Exponential") return pdfsModel.getExponentialSingle(Form("%s_exp%d",ext,order),order); 
-  else if (type=="Expow") return pdfsModel.getExpow(Form("%s_expow%d",ext,order),order); 
   else if (type=="PowerLaw") return pdfsModel.getPowerLawSingle(Form("%s_pow%d",ext,order),order); 
   else if (type=="Laurent") return pdfsModel.getLaurentSeries(Form("%s_lau%d",ext,order),order); 
   else {
@@ -78,15 +77,16 @@ void runFit(RooAbsPdf *pdf, RooDataSet *data, double *NLL, int *stat_t, int MaxT
   	RooArgSet *params_test = pdf->getParameters((const RooArgSet*)(0));
 	//std::cout << " BEFORE ITERATIONS-------------------------------" << std::endl;
 	//params_test->Print("v");
+	
 	int stat=1;
 	double minnll=10e8;
 	while (stat!=0){
 	  if (ntries>=MaxTries) break;
-	  //std::cout << "----------------------------- BEFORE FIT-------------------------------" << std::endl;
-	  //params_test->Print("v");
-	  //std::cout << "-----------------------------------------------------------------------" << std::endl;
+//	  std::cout << "----------------------------- BEFORE FIT-------------------------------" << std::endl;
+//	  params_test->Print("v");
+//	  std::cout << "-----------------------------------------------------------------------" << std::endl;
 	  RooFitResult *fitTest = pdf->fitTo(*data,RooFit::Save(1)
-		,RooFit::Minimizer("Minuit2","minimize"),RooFit::SumW2Error(kTRUE)); //FIXME
+		,RooFit::Minimizer("Minuit2","minimize"),RooFit::Offset(kTRUE),RooFit::Strategy(2),RooFit::SumW2Error(kTRUE)); //FIXME
           stat = fitTest->status();
 	  minnll = fitTest->minNll();
 	  if (stat!=0) params_test->assignValueOnly(fitTest->randomizePars());
@@ -103,9 +103,9 @@ double getProbabilityFtest(double chi2, int ndof,RooAbsPdf *pdfNull, RooAbsPdf *
   int ndata = data->sumEntries();
   
   // fit the pdfs to the data and keep this fit Result (for randomizing)
-  RooFitResult *fitNullData = pdfNull->fitTo(*data,RooFit::Save(1),RooFit::Strategy(1)
-		,RooFit::Minimizer("Minuit2","minimize"),RooFit::SumW2Error(kTRUE),RooFit::PrintLevel(-1)); //FIXME
-  RooFitResult *fitTestData = pdfTest->fitTo(*data,RooFit::Save(1),RooFit::Strategy(1)
+  RooFitResult *fitNullData = pdfNull->fitTo(*data,RooFit::Save(1),RooFit::Strategy(2)
+		,RooFit::Minimizer("Minuit2","minimize"),RooFit::Offset(kTRUE),RooFit::SumW2Error(kTRUE),RooFit::PrintLevel(-1)); //FIXME
+  RooFitResult *fitTestData = pdfTest->fitTo(*data,RooFit::Offset(kTRUE),RooFit::Strategy(2),RooFit::Save(1)
 		,RooFit::Minimizer("Minuit2","minimize"),RooFit::SumW2Error(kTRUE),RooFit::PrintLevel(-1)); //FIXME
 
   // Ok we want to check the distribution in toys then 
@@ -142,7 +142,9 @@ double getProbabilityFtest(double chi2, int ndof,RooAbsPdf *pdfNull, RooAbsPdf *
 
         params_null->assignValueOnly(preParams_null);
         params_test->assignValueOnly(preParams_test);
-  	RooDataHist *binnedtoy = pdfNull->generateBinned(RooArgSet(*mass),ndata,0,1);
+//  	RooDataHist *binnedtoy = pdfNull->generateBinned(RooArgSet(*mass),ndata,0,1);
+//  	wrong name
+     	RooDataHist *binnedtoy = pdfNull->generateBinned(RooArgSet(*mass),ndata,0,1);
 
 	int stat_n=1;
         int stat_t=1;
@@ -152,7 +154,7 @@ double getProbabilityFtest(double chi2, int ndof,RooAbsPdf *pdfNull, RooAbsPdf *
 	int MaxTries = 2;
 	while (stat_n!=0){
 	  if (ntries>=MaxTries) break;
-	  RooFitResult *fitNull = pdfNull->fitTo(*binnedtoy,RooFit::Save(1),RooFit::Strategy(1),RooFit::SumW2Error(kTRUE) //FIXME
+	  RooFitResult *fitNull = pdfNull->fitTo(*binnedtoy,RooFit::Save(1),RooFit::Offset(kTRUE),RooFit::Strategy(2),RooFit::SumW2Error(kTRUE) //FIXME
 		,RooFit::Minimizer("Minuit2","minimize"),RooFit::Minos(0),RooFit::Hesse(0),RooFit::PrintLevel(-1));
 		//,RooFit::Optimize(0));
 
@@ -309,7 +311,8 @@ void plot(RooRealVar *mass, RooAbsPdf *pdf, RooDataSet *data, string name,vector
   
   // Chi2 taken from full range fit
   RooPlot *plot_chi2 = mass->frame();
-  data->plotOn(plot_chi2,Binning(nBinsForMass));
+  //data->plotOn(plot_chi2,Binning(nBinsForMass));
+  data->plotOn(plot_chi2);
   pdf->plotOn(plot_chi2);
 
   int np = pdf->getParameters(*data)->getSize()+1; //Because this pdf has no extend
@@ -320,11 +323,15 @@ void plot(RooRealVar *mass, RooAbsPdf *pdf, RooDataSet *data, string name,vector
   mass->setRange("unblindReg_1",0,500);
   //mass->setRange("unblindReg_2",150,180);
   if (BLIND) {
-    data->plotOn(plot,Binning(nBinsForMass),CutRange("unblindReg_1"));
+//    data->plotOn(plot,Binning(nBinsForMass),CutRange("unblindReg_1"));
+    data->plotOn(plot,CutRange("unblindReg_1"));
+
     //data->plotOn(plot,Binning(nBinsForMass),CutRange("unblindReg_2"));
-    data->plotOn(plot,Binning(nBinsForMass),Invisible());
+   // data->plotOn(plot,Binning(nBinsForMass),Invisible());
+    data->plotOn(plot,Invisible());
   }
-  else data->plotOn(plot,Binning(nBinsForMass));
+  //else data->plotOn(plot,Binning(nBinsForMass));
+  else data->plotOn(plot);
 
  // data->plotOn(plot,Binning(80));
   TCanvas *canv = new TCanvas();
@@ -566,6 +573,7 @@ vector<string> diphotonCats_;
     ("runFtestCheckWithToys", 									"When running the F-test, use toys to calculate pvals (and make plots) ")
     ("unblind",  									        "Dont blind plots")
     ("isData",    								    	        "Use Data not MC-based pseudodata ")
+//		("diphotonCats,f", po::value<string>(&diphotonCatsStr_)->default_value("EBEB"),       "Flashgg category names to consider")
 		("diphotonCats,f", po::value<string>(&diphotonCatsStr_)->default_value("EBEB,EBEE"),       "Flashgg category names to consider")
     ("verbose,v",                                                                               "Run with more output")
   ;
@@ -620,19 +628,19 @@ vector<string> diphotonCats_;
 	vector<string> functionClasses;
 //	functionClasses.push_back("DijetSimple");
     functionClasses.push_back("Dijet");
-	functionClasses.push_back("Exponential");
+//	functionClasses.push_back("Exponential");
 //	functionClasses.push_back("Expow");
 // 	functionClasses.push_back("PowerLaw");
-	functionClasses.push_back("Laurent");
-	functionClasses.push_back("Atlas");
+//	functionClasses.push_back("Laurent");
+//	functionClasses.push_back("Atlas");
 	map<string,string> namingMap;
 //	namingMap.insert(pair<string,string>("DijetSimple","dijetsimp"));
 	namingMap.insert(pair<string,string>("Dijet","dijet"));
-	namingMap.insert(pair<string,string>("Atlas","atlas"));
-	namingMap.insert(pair<string,string>("Exponential","exp"));
+//	namingMap.insert(pair<string,string>("Atlas","atlas"));
+//	namingMap.insert(pair<string,string>("Exponential","exp"));
 //	namingMap.insert(pair<string,string>("Expow","expow"));
 //   	namingMap.insert(pair<string,string>("PowerLaw","pow"));
-	namingMap.insert(pair<string,string>("Laurent","lau"));
+//	namingMap.insert(pair<string,string>("Laurent","lau"));
 	// store results here
 
 	FILE *resFile ;
@@ -664,9 +672,6 @@ vector<string> diphotonCats_;
 	if(diphotonCats_[cat]=="EBEE") mass->setRange(320,1600); //FIXME Need a more configurable method to set range
 	if(diphotonCats_[cat]=="EBEB") mass->setRange(230,1600); //FIXME Need a more configurable method to set range
 	mass->setBins(nBinsForMass);
-	cout << "-------------------------------------------------------------------------------" << endl;
-	cout << "right mass loaded? " << endl;
-	mass->Print("v");
 
 	if (verbose) std::cout << "[INFO]  considering nTuple " << inNT->GetName() << std::endl;
 		map<string,int> choices;
@@ -713,7 +718,6 @@ vector<string> diphotonCats_;
 			int counter =0;
 			//	while (prob<0.05){
 			while (prob<0.05 && order < 5){ //FIXME should be around order 3
-				cout << "ORDER      " << order   << endl;
 				RooAbsPdf *bkgPdf = getPdf(pdfsModel,*funcType,order,Form("ftest_pdf_%d_%s",cat,sqrts_.c_str()));
 				if (!bkgPdf){
 					// assume this order is not allowed
@@ -729,7 +733,7 @@ vector<string> diphotonCats_;
 					chi2 = 2.*(prevNll-thisNll);
 					if (chi2<0. && order>1) chi2=0.;
 					if (prev_pdf!=NULL){
-						prob = getProbabilityFtest(chi2,order-prev_order,prev_pdf,bkgPdf,mass,data
+						prob = getProbabilityFtest(chi2,order-prev_order,prev_pdf,bkgPdf,mass,dataFull
 								,Form("%s/Ftest_from_%s%d_cat%d.pdf",outDir.c_str(),funcType->c_str(),order,cat));
 						std::cout << "[INFO]  F-test Prob(chi2>chi2(data)) == " << prob << std::endl;
 					} else {
@@ -779,7 +783,8 @@ vector<string> diphotonCats_;
 					else {
 						//RooFitResult *fitRes;
 						int fitStatus=0;
-						runFit(bkgPdf,data,&thisNll,&fitStatus,/*max iterations*/3);//bkgPdf->fitTo(*data,Save(true),RooFit::Minimizer("Minuit2","minimize"));
+					//	runFit(bkgPdf,data,&thisNll,&fitStatus,/*max iterations*/3);//bkgPdf->fitTo(*data,Save(true),RooFit::Minimizer("Minuit2","minimize"));
+						runFit(bkgPdf,dataFull,&thisNll,&fitStatus,/*max iterations*/3);//bkgPdf->fitTo(*data,Save(true),RooFit::Minimizer("Minuit2","minimize"));
 						//thisNll = fitRes->minNll();
 						if (fitStatus!=0) std::cout << "[WARNING] Warning -- Fit status for " << bkgPdf->GetName() << " at " << fitStatus <<std::endl;
 						double myNll = 2.*thisNll;
@@ -794,7 +799,7 @@ vector<string> diphotonCats_;
 
 						// Calculate goodness of fit for the thing to be included (will use toys for lowstats)!
 						double gofProb =0; 
-						plot(mass,bkgPdf,data,Form("%s/%s%d_cat%d.pdf",outDir.c_str(),funcType->c_str(),order,cat),diphotonCats_,fitStatus,&gofProb);
+						plot(mass,bkgPdf,dataFull,Form("%s/%s%d_cat%d.pdf",outDir.c_str(),funcType->c_str(),order,cat),diphotonCats_,fitStatus,&gofProb);
 
 						if ((prob < upperEnvThreshold) ) { // Looser requirements for the envelope
 
@@ -859,9 +864,9 @@ vector<string> diphotonCats_;
 			// Save it (also a binned version of the dataset
 			outputws->import(*pdf);
 			outputws->import(nBackground);
-			outputws->import(catIndex);
-			outputws->import(dataBinned);
-			outputws->import(*data);
+	//		outputws->import(catIndex);
+//			outputws->import(dataBinned);
+//			outputws->import(*data);
 			outputws->import(*dataFull);
 			plot(mass,pdf,&catIndex,data,Form("%s/multipdf_%s",outDir.c_str(),catname.c_str()),diphotonCats_,cat,bestFitPdfIndex);
 
