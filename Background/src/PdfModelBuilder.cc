@@ -426,7 +426,7 @@ RooAbsPdf* PdfModelBuilder::getAtlas(string prefix, int order){
 
 RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
      if(order<1){
-            cerr << "{INFO] -- dijet needs to be at least of order 1" << endl;
+            cerr << "[INFO] -- dijet needs to be at least of order 1" << endl;
               return NULL;
                  }
         else {
@@ -446,16 +446,29 @@ RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
 		}
 	
                 if(order ==3 && i==1) {//FIXME make setVal nicer
-    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-5.0,-100.0,100.)));
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-4.5,-100.0,100.)));
 		}
 		if(order==3 && i==2) {
-    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),3.0,-100.0,100.)));
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),2.5,-100.0,100.)));
 		}
 		
 		if(order ==3 && i==3) {
     	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-0.3,-100.0,100.)));
 	
         }
+                if(order ==4 && i==1) {//FIXME make setVal nicer
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-8.0,-100.0,100.)));
+		}
+		if(order==4 && i==2) {
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),7.0,-100.0,100.)));
+		}
+		
+		if(order ==4 && i==3) {
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-0.03,-100.0,100.)));
+	}
+		if(order ==4 && i==4) {
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-0.02,-100.0,100.)));
+	}
 	    else{
                     
                 params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-1.0,-100.0,100.0)));
@@ -470,7 +483,7 @@ RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
 	    }
   	formula= Form("TMath::Exp(%s)",formula_exp.c_str()) ; 
   	RooGenericPdf* dijet = new RooGenericPdf(prefix.c_str(), prefix.c_str(), formula.c_str(),*dependents );
-	dijet->Print();
+//	dijet->Print();
         return dijet;
         }
 }
