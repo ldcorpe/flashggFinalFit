@@ -118,8 +118,8 @@ double getProbabilityFtest(double chi2, int ndof,RooAbsPdf *pdfNull, RooAbsPdf *
   RooArgSet preParams_test;
   params_test->snapshot(preParams_test);
  
-  //int ntoys =5000;
-  int ntoys =1000;
+//  int ntoys =5000;
+  int ntoys =500;//for debuging
   TCanvas *can = new TCanvas();
   TH1F toyhist(Form("toys_fTest_%s.pdf",pdfNull->GetName()),";Chi2;",1000,-2,3000);
   TH1I toyhistStatN(Form("Status_%s.pdf",pdfNull->GetName()),";FitStatus;",8,-4,4);
@@ -141,7 +141,6 @@ double getProbabilityFtest(double chi2, int ndof,RooAbsPdf *pdfNull, RooAbsPdf *
   }
   int npass =0; int nsuccesst =0;
   int st_t=0; int st_n=0;
-//  mass->setBins(nBinsForMass);
   for (int itoy = 0 ; itoy < ntoys ; itoy++){
 
         params_null->assignValueOnly(preParams_null);
@@ -252,6 +251,7 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
 	
   double prob;
   int ntoys = 500;
+  int nBinsForMass=mass->getBinning().numBins();
 
   // Routine to calculate the goodness of fit. 
   name+="_gofTest";
@@ -262,9 +262,9 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
 
   // get The Chi2 value from the data
   RooPlot *plot_chi2 = mass->frame();
-  data->plotOn(plot_chi2,Name("data"),Binning("forgof"));
+  data->plotOn(plot_chi2,Name("data"));
 
-  pdf->plotOn(plot_chi2,Name("pdf"),Binning("forgof"));
+  pdf->plotOn(plot_chi2,Name("pdf"));
   int np = pdf->getParameters(*data)->getSize();
 
   double chi2 = plot_chi2->chiSquare("pdf","data",np);
@@ -273,8 +273,7 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
   // The first thing is to check if the number of entries in any bin is < 5 
   // if so, we don't rely on asymptotic approximations
 //MQ just calcluate GoF by default 
-	int nBinsForMass=mass->getBinning("forgof").numBins();
-//    if ((double)data->sumEntries()/nBinsForMass < 5 ){ 
+  //  if ((double)data->sumEntries()/nBinsForMass < 5 ){ 
 
     std::cout << "[INFO] Running toys for GOF test " << std::endl;
     // store pre-fit params 
@@ -335,12 +334,9 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
 void plot(RooRealVar *mass, RooAbsPdf *pdf, RooDataSet *data, string name,vector<string> diphotonCats_, int cat,int status, double *prob){
   
   // Chi2 taken from full range fit
- if(diphotonCats_[cat]=="EBEE") mass->setBins(64,"forgof");
- if(diphotonCats_[cat]=="EBEB") mass->setBins(70,"forgof"); //FIXME 
-  int nBinsForMass=mass->getBinning("forgof").numBins() ;
+  int nBinsForMass=mass->getBinning().numBins() ;
   RooPlot *plot_chi2 = mass->frame();
-  data->plotOn(plot_chi2,Binning(nBinsForMass));
-//  data->plotOn(plot_chi2);
+  data->plotOn(plot_chi2);
   pdf->plotOn(plot_chi2);
   //MQ plot that TODO
   int np = pdf->getParameters(*data)->getSize()+1; //Because this pdf has no extend
@@ -351,14 +347,14 @@ void plot(RooRealVar *mass, RooAbsPdf *pdf, RooDataSet *data, string name,vector
   mass->setRange("unblindReg_1",0,500);
   //mass->setRange("unblindReg_2",150,180);
   if (BLIND) {
-    data->plotOn(plot,Binning("forgof"),CutRange("unblindReg_1"));
+    data->plotOn(plot,Binning(nBinsForMass),CutRange("unblindReg_1"));
 //    data->plotOn(plot,CutRange("unblindReg_1"));
 
     //data->plotOn(plot,Binning(nBinsForMass),CutRange("unblindReg_2"));
-   data->plotOn(plot,Binning("forgof"),Invisible());
+   data->plotOn(plot,Binning(nBinsForMass),Invisible());
    // data->plotOn(plot,Invisible());
   }
-  else data->plotOn(plot,Binning("forgof"));
+  else data->plotOn(plot,Binning(nBinsForMass));
   //else data->plotOn(plot);
 
  // data->plotOn(plot,Binning(80));
@@ -453,7 +449,6 @@ void plot(RooRealVar *mass, map<string,RooAbsPdf*> pdfs, RooDataSet *data, strin
   leg->SetFillColor(0);
   leg->SetLineColor(0);
   RooPlot *plot = mass->frame();
-  int nBinsForMass=mass->getBinning().numBins() ;
   mass->setRange("unblindReg_1",0,500);
  
   //mass->setRange("unblindReg_2",150,180);
@@ -615,8 +610,7 @@ vector<string> diphotonCats_;
     ("runFtestCheckWithToys", 									"When running the F-test, use toys to calculate pvals (and make plots) ")
     ("unblind",  									        "Dont blind plots")
     ("isData",    								    	        "Use Data not MC-based pseudodata ")
-//		("diphotonCats,f", po::value<string>(&diphotonCatsStr_)->default_value("EBEB,EBEE"),       "Flashgg category names to consider")
-		("diphotonCats,f", po::value<string>(&diphotonCatsStr_)->default_value("EBEB"),       "Flashgg category names to consider")
+	("diphotonCats,f", po::value<string>(&diphotonCatsStr_)->default_value("EBEB,EBEE"),       "Flashgg category names to consider")
     ("verbose,v",                                                                               "Run with more output")
   ;
   po::variables_map vm;
@@ -651,13 +645,12 @@ vector<string> diphotonCats_;
 
   system(Form("mkdir -p %s",outDir.c_str()));
   TFile *inFile = TFile::Open(fileName.c_str());
-//  RooWorkspace *inWS;
   RooWorkspace *inWS = (RooWorkspace*)inFile->Get("wtemplates");
 if (saveMultiPdf){
 		transferMacros(inFile,outputfile);
 
-		RooRealVar *intL; 
-		RooRealVar *sqrts;
+//		RooRealVar *intL; 
+//		RooRealVar *sqrts;
 		
 		/*std::cout << "DEBUG LC inNT entries  " << inNT->GetEntries() << std::endl;
 		//inNT->Print();
@@ -669,21 +662,19 @@ if (saveMultiPdf){
 		} */
 	}
 	vector<string> functionClasses;
-//	functionClasses.push_back("DijetSimple");
-    functionClasses.push_back("Dijet");
-//	functionClasses.push_back("Exponential");
+//    functionClasses.push_back("Dijet");
+	functionClasses.push_back("Exponential");
 //	functionClasses.push_back("Expow");
-// 	functionClasses.push_back("PowerLaw");
-//	functionClasses.push_back("Laurent");
+ 	functionClasses.push_back("PowerLaw");
+	functionClasses.push_back("Laurent");
 //	functionClasses.push_back("Atlas");
 	map<string,string> namingMap;
-//	namingMap.insert(pair<string,string>("DijetSimple","dijetsimp"));
-	namingMap.insert(pair<string,string>("Dijet","dijet"));
+//	namingMap.insert(pair<string,string>("Dijet","dijet"));
 //	namingMap.insert(pair<string,string>("Atlas","atlas"));
-//	namingMap.insert(pair<string,string>("Exponential","exp"));
+	namingMap.insert(pair<string,string>("Exponential","exp"));
 //	namingMap.insert(pair<string,string>("Expow","expow"));
-//   	namingMap.insert(pair<string,string>("PowerLaw","pow"));
-//	namingMap.insert(pair<string,string>("Laurent","lau"));
+   	namingMap.insert(pair<string,string>("PowerLaw","pow"));
+	namingMap.insert(pair<string,string>("Laurent","lau"));
 	// store results here
 
 	FILE *resFile ;
@@ -702,9 +693,9 @@ if (saveMultiPdf){
 	for (int cat=startingCategory; cat<ncats; cat++){
 	string catname;
 	catname = Form("%s",diphotonCats_[cat].c_str());
-  //  RooRealVar *mass = new RooRealVar (Form("mgg%s",catname.c_str()),Form("mgg%s",catname.c_str()), 200, 1600);
-	RooRealVar *mass = (RooRealVar*)inWS->var(Form("mgg%s",catname.c_str()));
-	pdfsModel.setObsVar(mass);
+//	RooRealVar *mass = (RooRealVar*)inWS->var(Form("mgg%s",catname.c_str()));
+//	outputws->import(*mass_ws);//FIXME check if overwritten by *pdf import, shoudnt be the case
+	RooRealVar *mass = new RooRealVar (Form("mgg%s",catname.c_str()),Form("mgg%s",catname.c_str()), 200, 1600);
 
   TNtuple *inNT;
 		if (isData_){
@@ -712,8 +703,8 @@ if (saveMultiPdf){
 		} else {
 			inNT = (TNtuple*)inFile->Get(Form("tree_data_%s_%s",analysisType_.c_str(),diphotonCats_[cat].c_str()));
 		}
-//    int nBinsForMass=0;
-	//mass->setBins(nBinsForMass);
+    int nBinsForMass=100.;
+	mass->setBins(nBinsForMass);
 
 	if (verbose) std::cout << "[INFO]  considering nTuple " << inNT->GetName() << std::endl;
 		map<string,int> choices;
@@ -729,30 +720,31 @@ if (saveMultiPdf){
 	if(diphotonCats_[cat]=="EBEE")
 	    {  
 		mass->setRange(320,1600); //FIXME Need a more configurable method to set range
-	//	nBinsForMass=64;
-	 //   mass->setBins(nBinsForMass);
+		nBinsForMass=50;//roughly binning of 25 GeV acoording to EXO-15-004
+	    mass->setBins(nBinsForMass);
 		}
 	if(diphotonCats_[cat]=="EBEB") 
 	{
 		
 		mass->setRange(230,1600); //FIXME Need a more configurable method to set range binning 20 GeV
-	//	nBinsForMass=70;
-	 //   mass->setBins(nBinsForMass);
+		nBinsForMass=70; //roughly binning of 25 GeV according to EXO-15-004
+	    mass->setBins(nBinsForMass);
 	}
+	pdfsModel.setObsVar(mass);
 		//TCanvas *t = new TCanvas();
 		//RooPlot *frame = mass->frame();
 		//dataFull->plotOn(frame);
 
 
-		RooDataSet *dataBinned;
-		string thisdataBinned_name;
+	//	RooDataSet *dataBinned;
+	//	string thisdataBinned_name;
 //		string thisdata_name;
-		thisdataBinned_name =Form("data_binned_%s",diphotonCats_[cat].c_str());
-		thisdataBinned_name =Form("data_binned_%s",diphotonCats_[cat].c_str());
+	//	thisdataBinned_name =Form("data_binned_%s",diphotonCats_[cat].c_str());
+	//	thisdataBinned_name =Form("data_binned_%s",diphotonCats_[cat].c_str());
 //		thisdata_name =Form("data__%s",diphotonCats_[cat].c_str());
 //		thisdata_name =Form("data__%s",diphotonCats_[cat].c_str());
-		RooDataHist thisdataBinned(thisdataBinned_name.c_str(),"data",*mass,*dataFull);
-		dataBinned = (RooDataSet*)&thisdataBinned;
+	//	RooDataHist thisdataBinned(thisdataBinned_name.c_str(),"data",*mass,*dataFull);
+	//	dataBinned = (RooDataSet*)&thisdataBinned;
 
 		RooArgList storedPdfs("store");
 		fprintf(resFile,"\\multicolumn{4}{|c|}{\\textbf{Category %d}} \\\\\n",cat);

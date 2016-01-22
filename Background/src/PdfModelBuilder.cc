@@ -41,6 +41,7 @@ PdfModelBuilder::PdfModelBuilder():
 {
   
   recognisedPdfTypes.push_back("Bernstein");
+  recognisedPdfTypes.push_back("Dijet");
   recognisedPdfTypes.push_back("Exponential");
   recognisedPdfTypes.push_back("PowerLaw");
   recognisedPdfTypes.push_back("Laurent");
@@ -439,39 +440,39 @@ RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
 		string logc =  Form("%s_log%d",prefix.c_str(),i);
     
                 if(order ==2 && i==1) {//FIXME make setVal nicer
-    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),5.0,-100.0,100.)));
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),4.5,-30.0,30.)));
 		}
 		if(order==2 && i==2) {
-    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-1.0,-100.0,100.0)));
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-0.8,-30.0,30.0)));
 		}
 	
                 if(order ==3 && i==1) {//FIXME make setVal nicer
-    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-4.5,-100.0,100.)));
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),3.0,-30.0,30.)));
 		}
 		if(order==3 && i==2) {
-    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),2.5,-100.0,100.)));
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-0.5,-30.0,30.)));
 		}
 		
 		if(order ==3 && i==3) {
-    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-0.3,-100.0,100.)));
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-0.3,-30.0,30.)));
 	
         }
                 if(order ==4 && i==1) {//FIXME make setVal nicer
-    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-8.0,-100.0,100.)));
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),4.0,-30.0,30.)));
 		}
 		if(order==4 && i==2) {
-    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),7.0,-100.0,100.)));
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-0.5,-30.0,30.)));
 		}
 		
 		if(order ==4 && i==3) {
-    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-0.03,-100.0,100.)));
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-0.05,-30.0,30.)));
 	}
 		if(order ==4 && i==4) {
-    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-0.02,-100.0,100.)));
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-0.02,-30.0,30.)));
 	}
 	    else{
-                    
-                params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-1.0,-100.0,100.0)));
+                   
+                params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-4.6,-30.0,30.0)));
             } 
                 if (i==1){
 			formula_exp = Form("  (@%d*TMath::Power(log(@0),%d))",i,i);
@@ -483,13 +484,13 @@ RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
 	    }
   	formula= Form("TMath::Exp(%s)",formula_exp.c_str()) ; 
   	RooGenericPdf* dijet = new RooGenericPdf(prefix.c_str(), prefix.c_str(), formula.c_str(),*dependents );
-//	dijet->Print();
+	dijet->Print();
         return dijet;
         }
 }
 RooAbsPdf* PdfModelBuilder::getExpow(string prefix, int order){
     if(order<1){
-    	cerr << "[WARNING] -- dijet needs to be at least of order 1" << endl;
+    	cerr << "[WARNING] -- expow needs to be at least of order 1" << endl;
     	return NULL;
     }
 	else{
@@ -512,7 +513,6 @@ RooAbsPdf* PdfModelBuilder::getExpow(string prefix, int order){
 			}
 			dependents->add(*params[expc]);
 		}
-	   	dependents->Print("v");
   		formula= Form("TMath:Power(@0,@1)*TMath::Exp(%s)",formula_exp.c_str()) ; 
 		RooGenericPdf* expow = new RooGenericPdf(prefix.c_str(), prefix.c_str(),formula.c_str(),*dependents );
 		return expow;
@@ -529,7 +529,6 @@ RooAbsPdf* PdfModelBuilder::getDijetSimple(string prefix, int order){
 		params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-1.,-100.0,100.)));
 		dependents->add(*params[linc]);
 		dependents->add(*params[logc]);
-		dependents->Print();
 		RooGenericPdf* dijet = new RooGenericPdf(prefix.c_str(), prefix.c_str(),"TMath::Power(@0,@1+@2*log(@0)) ",*dependents );
 		dijet->Print();
 		return dijet;
