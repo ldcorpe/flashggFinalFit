@@ -51,6 +51,7 @@ using namespace boost;
 namespace po = program_options;
 
 bool BLIND = true;
+bool rungofToys = false;
 bool runFtestCheckWithToys=false;
 //int nBinsForMass = 100;
 
@@ -247,7 +248,7 @@ cout << "Probability with TMath::Prob function " << prob_asym << " Probability w
 
 }
 
-double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std::string name){
+double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std::string name, bool gofToys){
 	
   double prob;
   int ntoys = 500;
@@ -272,8 +273,9 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
 
   // The first thing is to check if the number of entries in any bin is < 5 
   // if so, we don't rely on asymptotic approximations
-//MQ just calcluate GoF by default 
-  //  if ((double)data->sumEntries()/nBinsForMass < 5 ){ 
+//MQ just calcluate GoF by default
+ 
+    if (((double)data->sumEntries()/nBinsForMass < 5) or gofToys ){ 
 
     std::cout << "[INFO] Running toys for GOF test " << std::endl;
     // store pre-fit params 
@@ -323,7 +325,8 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
 
     // back to best fit 	
     params->assignValueOnly(preParams);
-  //	} else {  prob = TMath::Prob(chi2*(nBinsForMass-np),nBinsForMass-np); }
+	cout << "Probability from toys " << prob << " Probability from Chi2 " << TMath::Prob(chi2*(nBinsForMass-np),nBinsForMass-np)<< endl;
+  	} else {  prob = TMath::Prob(chi2*(nBinsForMass-np),nBinsForMass-np); }
   std::cout << "[INFO] Chi2 in Observed =  " << chi2*(nBinsForMass-np) << std::endl;
   std::cout << "[INFO] p-value  =  " << prob << std::endl;
   delete pdf;
@@ -331,7 +334,7 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
 
 }
 
-void plot(RooRealVar *mass, RooAbsPdf *pdf, RooDataSet *data, string name,vector<string> diphotonCats_, int cat,int status, double *prob){
+void plot(RooRealVar *mass, RooAbsPdf *pdf, RooDataSet *data, string name,vector<string> diphotonCats_, int cat,int status, double *prob, bool gofToys=false){
   
   // Chi2 taken from full range fit
   int nBinsForMass=mass->getBinning().numBins() ;
@@ -342,7 +345,7 @@ void plot(RooRealVar *mass, RooAbsPdf *pdf, RooDataSet *data, string name,vector
   int np = pdf->getParameters(*data)->getSize()+1; //Because this pdf has no extend
   double chi2 = plot_chi2->chiSquare(np);
  
-  *prob = getGoodnessOfFit(mass,pdf,data,name);
+  *prob = getGoodnessOfFit(mass,pdf,data,name, gofToys);
   RooPlot *plot = mass->frame();
   mass->setRange("unblindReg_1",0,500);
   //mass->setRange("unblindReg_2",150,180);
@@ -610,6 +613,7 @@ vector<string> diphotonCats_;
     ("runFtestCheckWithToys", 									"When running the F-test, use toys to calculate pvals (and make plots) ")
     ("unblind",  									        "Dont blind plots")
     ("isData",    								    	        "Use Data not MC-based pseudodata ")
+    ("rungofToys",    								    	        "compute gof with toys instead of chi2 ")
 	("diphotonCats,f", po::value<string>(&diphotonCatsStr_)->default_value("EBEB,EBEE"),       "Flashgg category names to consider")
     ("verbose,v",                                                                               "Run with more output")
   ;
@@ -618,6 +622,7 @@ vector<string> diphotonCats_;
   po::notify(vm);
   if (vm.count("help")) { cout << desc << endl; exit(1); }
 	if (vm.count("unblind")) BLIND=false;
+	if (vm.count("rungofToys")) rungofToys=true;
 	if (vm.count("isData")) isData_=true;
   saveMultiPdf = vm.count("saveMultiPdf");
 
@@ -767,6 +772,7 @@ if (saveMultiPdf){
 			int counter =0;
 			//	while (prob<0.05){
 			while (prob<0.05 && order < 5){ //FIXME should be around order 3
+				
 				RooAbsPdf *bkgPdf = getPdf(pdfsModel,*funcType,order,Form("ftest_pdf_%d_%s",cat,sqrts_.c_str()));
 				if (!bkgPdf){
 					// assume this order is not allowed
@@ -778,6 +784,7 @@ if (saveMultiPdf){
 					int fitStatus = 0;
 					//thisNll = fitRes->minNll();
 					runFit(bkgPdf,dataFull,&thisNll,&fitStatus,/*max iterations*/3);//bkgPdf->fitTo(*data,Save(true),RooFit::Minimizer("Minuit2","minimize"));
+					cout << __LINE__<< endl;
 					if (fitStatus!=0) std::cout << "[ERROR] Warning -- Fit status for " << bkgPdf->GetName() << " at " << fitStatus <<std::endl;
 					chi2 = 2.*(prevNll-thisNll);
 					if (chi2<0. && order>1) chi2=0.;
@@ -792,7 +799,9 @@ if (saveMultiPdf){
 					double gofProb=0;
 					// otherwise we get it later ...
 					if (!saveMultiPdf) plot(mass,bkgPdf,dataFull,Form("%s/%s%d_cat%d.png",outDir.c_str(),funcType->c_str(),order,cat),diphotonCats_,cat,fitStatus,&gofProb);
-					cout << "[INFO]\t " << *funcType << " " << order << " " << prevNll << " " << thisNll << " " << chi2 << " " << prob << endl;
+					cout << __LINE__ << endl;
+					cout << "[INFO]\t " << *funcType << " " << order << " :prevNll " << prevNll << " thisNll " << thisNll << " Chi2 " << chi2 << " prob  " << prob << endl;
+					cout << "-----------------------------------------------------" << endl;
 					//fprintf(resFile,"%15s && %d && %10.2f && %10.2f && %10.2f \\\\\n",funcType->c_str(),order,thisNll,chi2,prob);
 					prevNll=thisNll;
 					cache_order=prev_order;
@@ -848,7 +857,7 @@ if (saveMultiPdf){
 
 						// Calculate goodness of fit for the thing to be included (will use toys for lowstats)!
 						double gofProb =0; 
-						plot(mass,bkgPdf,dataFull,Form("%s/%s%d_cat%d",outDir.c_str(),funcType->c_str(),order,cat),diphotonCats_,cat,fitStatus,&gofProb);
+						plot(mass,bkgPdf,dataFull,Form("%s/%s%d_cat%d",outDir.c_str(),funcType->c_str(),order,cat),diphotonCats_,cat,fitStatus,&gofProb,rungofToys);
 
                              cout << "gofProb " << gofProb<< " (prob) " << prob << "upperEnvThres" << upperEnvThreshold << endl;
 						if ((prob < upperEnvThreshold) ) { // Looser requirements for the envelope  
