@@ -184,9 +184,9 @@ RooAbsPdf* PdfModelBuilder::getPowerLawGeneric(string prefix, int order){
       }
     }
     cout << "FORM -- " << formula << endl;
-    dependents->Print("v");
+//    dependents->Print("v");
     RooGenericPdf *pow = new RooGenericPdf(prefix.c_str(),prefix.c_str(),formula.c_str(),*dependents);
-    pow->Print("v");
+  //  pow->Print("v");
     return pow;
     //bkgPdfs.insert(pair<string,RooAbsPdf*>(pow->GetName(),pow));
 
@@ -278,7 +278,7 @@ RooAbsPdf* PdfModelBuilder::getPowerLawSingle(string prefix, int order){
     //pows->Print("v");
     //cout << "Function..." << endl;
     RooAbsPdf *pow = new RooAddPdf(prefix.c_str(),prefix.c_str(),*pows,*fracs,true); 
-    pow->Print("v");
+  //  pow->Print("v");
     return pow;
     //bkgPdfs.insert(pair<string,RooAbsPdf*>(pow->GetName(),pow));
   }
@@ -485,6 +485,7 @@ RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
   	formula= Form("TMath::Exp(%s)",formula_exp.c_str()) ; 
   	RooGenericPdf* dijet = new RooGenericPdf(prefix.c_str(), prefix.c_str(), formula.c_str(),*dependents );
 	dijet->Print();
+    cout << "--------------------------" << endl;
         return dijet;
         }
 }
@@ -717,7 +718,7 @@ RooDataSet* PdfModelBuilder::makeHybridDataset(vector<float> switchOverMasses, v
   cut_strings.push_back(Form("cutstring%d",int(switchOverMasses.size())));
   obs_var->setRange(Form("cutstring%d",int(switchOverMasses.size())),switchOverMasses[switchOverMasses.size()-1],obs_var->getMax());
   
-  obs_var->Print("v");
+//  obs_var->Print("v");
   assert(cut_strings.size()==dataForHybrid.size());
   
 	RooDataSet *data=0;// avoid uninitialised variable error in cmssw  
