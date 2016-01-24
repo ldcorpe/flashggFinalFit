@@ -172,7 +172,7 @@ double getProbabilityFtest(double chi2, int ndof,RooAbsPdf *pdfNull, RooAbsPdf *
 	ntries = 0;
 	while (stat_t!=0){
 	  if (ntries>=MaxTries) break;
-	  RooFitResult *fitTest = pdfTest->fitTo(*binnedtoy,RooFit::Save(1),RooFit::Strategy(2),RooFit::SumW2Error(kTRUE) ,RooFit::Minimizer("Minuit2","minimize"),RooFit::PrintLevel(-1));
+	  RooFitResult *fitTest = pdfTest->fitTo(*binnedtoy,RooFit::Save(1),RooFit::Offset(kTRUE),RooFit::Strategy(2),RooFit::SumW2Error(kTRUE) ,RooFit::Minimizer("Minuit2","minimize"),RooFit::PrintLevel(-1));
 	  nllTest = fitTest->minNll();
           stat_t = fitTest->status();
 	  if (stat_t!=0) params_test->assignValueOnly(fitTestData->randomizePars()); 
@@ -186,6 +186,7 @@ double getProbabilityFtest(double chi2, int ndof,RooAbsPdf *pdfNull, RooAbsPdf *
         if (stat_t !=0 || stat_n !=0) continue;
 	nsuccesst++;
 	double chi2_t = 2*(nllNull-nllTest);
+	cout << " chi2_t " << chi2_t << " nllNull  " << nllNull <<  " nllTest " << nllTest << endl;
 	if (chi2_t >= chi2) npass++;
         toyhist.Fill(chi2_t);
      //MQ just for debugging
@@ -241,6 +242,7 @@ double getProbabilityFtest(double chi2, int ndof,RooAbsPdf *pdfNull, RooAbsPdf *
   if(st_n!=0 || st_t !=0){
 	cout << "[ERROR]  ---- ntoys " << ntoys << " from those n-fit failed " << st_n << "  from those n+1 fit failed " << st_t << endl; 
   }
+  cout<< "chi2_t >= chi2 " << npass << "both fitted " << nsuccesst << "prob    " << endl;
 cout << "Probability with TMath::Prob function " << prob_asym << " Probability with toys " << prob  << endl; 
   // Still return the asymptotic prob (usually its close to the toys one)
   return prob;
@@ -273,7 +275,7 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
 
   // The first thing is to check if the number of entries in any bin is < 5 
   // if so, we don't rely on asymptotic approximations
-//MQ just calcluate GoF by default
+//get probability with toys because less statistics
  
     if (((double)data->sumEntries()/nBinsForMass < 5) or gofToys ){ 
 
