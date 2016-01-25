@@ -530,24 +530,34 @@ RooAbsPdf* PdfModelBuilder::getExpow(string prefix, int order){
     }
 	else{
 		string formula_exp="";
+		string formula_pow="";
 		string formula="";
 		RooArgList *dependents = new RooArgList();
 		dependents->add(*obs_var);
-		string powc =  Form("%s_pow",prefix.c_str());
-		params.insert(pair<string,RooRealVar*>(powc, new RooRealVar(powc.c_str(),powc.c_str(),-1.,-100.0,100.)));
-		dependents->add(*params[powc]);
     	for (int i=1; i<=order; i++){
+			string powc =  Form("%s_pow",prefix.c_str());
+			if(order==1) params.insert(pair<string,RooRealVar*>(powc, new RooRealVar(powc.c_str(),powc.c_str(),-4.,-100.0,100.)));
+			else params.insert(pair<string,RooRealVar*>(powc, new RooRealVar(powc.c_str(),powc.c_str(),2.,-100.0,100.)));
 			string expc =  Form("%s_exp%d",prefix.c_str(),i);
-			params.insert(pair<string,RooRealVar*>(expc, new RooRealVar(expc.c_str(),expc.c_str(),5.,-100.0,100.)));
+//			if(order==2 and i==2){
+//		RooFormulaVar hmax("hmax","( @1 != 0. ? (-@0/(4.*@1)>300. && -@0/(4.*@1)<3500. ? @0*@0/(4.*@1+@1) : TMath::Max(@0*3500+2*@1*3500.*3500,@0*3500+2*@1*300.*300)) : @0*3500.)", params[1],params[2] );
+			
+//			params.insert(pair<string,RooRealVar*>(expc, new RooRealVar(expc.c_str(),expc.c_str(),hmax)));
+//			}
+//			else 
+				params.insert(pair<string,RooRealVar*>(expc, new RooRealVar(expc.c_str(),expc.c_str(),0.,-100.0,100.)));
 			if (i==1){
 				formula_exp = Form("@%d*@0",i+1);
+				formula_pow = Form("@%d",i);
 			}
 			else{
 				formula_exp += Form(" + @%d*TMath::Power(@0,%d)",i+1,i);
+				formula_pow += Form(" + @%d",i);
 			}
 			dependents->add(*params[expc]);
+			dependents->add(*params[powc]);
 		}
-  		formula= Form("TMath::Power(@0,@1)*TMath::Exp(%s)",formula_exp.c_str()) ; 
+  		formula= Form("TMath::Power(@0,%s)*TMath::Exp(%s)",formula_pow.c_str(),formula_exp.c_str()) ; 
 		RooGenericPdf* expow = new RooGenericPdf(prefix.c_str(), prefix.c_str(),formula.c_str(),*dependents );
 		return expow;
 	}
