@@ -84,7 +84,7 @@ void runFit(RooAbsPdf *pdf, RooDataSet *data, double *NLL, int *stat_t, int MaxT
 	  if (ntries>=MaxTries) break;
 	  std::cout << "SCZ current try " << ntries << " stat=" << stat << " minnll=" << minnll << std::endl;
 	  std::cout << "----------------------------- BEFORE FIT-------------------------------" << std::endl;
-	  params_test->Print("v");
+	 // params_test->Print("v");
 	  std::cout << "-----------------------------------------------------------------------" << std::endl;
 	  RooFitResult *fitTest = pdf->fitTo(*data,RooFit::Save(1)
 		,RooFit::Minimizer("Minuit2","minimize"),RooFit::Offset(kTRUE),RooFit::Strategy(2),RooFit::SumW2Error(kTRUE)); //FIXME
@@ -265,7 +265,6 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
   name+="_gofTest";
   RooRealVar norm("norm","norm",data->sumEntries(),0,10E6);
   //norm.removeRange();
-  int nevents=data->sumEntries(); 
   RooExtendPdf *pdf = new RooExtendPdf("ext","ext",*mpdf,norm);
 
   // get The Chi2 value from the data
@@ -280,12 +279,10 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
 
   // The first thing is to check if the number of entries in any bin is < 5 
   // if so, we don't rely on asymptotic approximations
-//MQ just calcluate GoF by default
  
     if (((double)data->sumEntries()/nBinsForMass < 5) or gofToys ){ 
 
     std::cout << "[INFO] Running toys for GOF test " << std::endl;
-//	mass->setMax(1600.);
     // store pre-fit params 
     RooArgSet *params = pdf->getParameters(*data);
     RooArgSet preParams;
@@ -658,7 +655,7 @@ vector<string> diphotonCats_;
 
   system(Form("mkdir -p %s",outDir.c_str()));
   TFile *inFile = TFile::Open(fileName.c_str());
-  RooWorkspace *inWS = (RooWorkspace*)inFile->Get("wtemplates");
+////  RooWorkspace *inWS = (RooWorkspace*)inFile->Get("wtemplates");
 //add normalisation parameter
 if (saveMultiPdf){
 		transferMacros(inFile,outputfile);
@@ -676,21 +673,21 @@ if (saveMultiPdf){
 		} */
 	}
 	vector<string> functionClasses;
-    functionClasses.push_back("Dijet");
-    functionClasses.push_back("Exponential");
+//    functionClasses.push_back("Dijet");
+ //   functionClasses.push_back("Exponential");
 //	functionClasses.push_back("Expow");
-//    functionClasses.push_back("PowerLaw");
-    functionClasses.push_back("Laurent");
+  //  functionClasses.push_back("PowerLaw");
+  //  functionClasses.push_back("Laurent");
 	functionClasses.push_back("Atlas");
 //	functionClasses.push_back("VVdijet");
 	map<string,string> namingMap;
- 	namingMap.insert(pair<string,string>("Dijet","dijet"));
+// 	namingMap.insert(pair<string,string>("Dijet","dijet"));
 	namingMap.insert(pair<string,string>("Atlas","atlas"));
 //	namingMap.insert(pair<string,string>("VVdijet","vvdijet"));
-	namingMap.insert(pair<string,string>("Exponential","exp"));
+//	namingMap.insert(pair<string,string>("Exponential","exp"));
 //	namingMap.insert(pair<string,string>("Expow","expow"));
 //	namingMap.insert(pair<string,string>("PowerLaw","pow"));
-	namingMap.insert(pair<string,string>("Laurent","lau"));
+//	namingMap.insert(pair<string,string>("Laurent","lau"));
 	// store results here
 
 	FILE *resFile ;
@@ -707,71 +704,46 @@ if (saveMultiPdf){
 	fprintf(resFile,"\\hline\n");
 
 	for (int cat=startingCategory; cat<ncats; cat++){
-	string catname;
-	catname = Form("%s",diphotonCats_[cat].c_str());
-//	 RooRealVar *mass=(RooRealVar*)inWS->var(Form("mgg%s",catname.c_str()));
-	RooRealVar *mass;
-    int nBinsForMass=4000.;
-	if(diphotonCats_[cat]=="EBEB") 
-	{
-		mass = new RooRealVar (Form("mgg%s",catname.c_str()),Form("mgg%s",catname.c_str()), 230, 10000);
-		nBinsForMass=4000;//roughly binning of 25 GeV acoording to EXO-15-004
-	}
-		else if(diphotonCats_[cat]=="EBEE") mass = new RooRealVar (Form("mgg%s",catname.c_str()),Form("mgg%s",catname.c_str()), 320, 10000);
-		nBinsForMass=3400;//roughly binning of 25 GeV acoording to EXO-15-004
-//	RooRealVar *mass = new RooRealVar (Form("mgg%s",catname.c_str()),Form("mgg%s",catname.c_str()), 200, 1600);
-	mass->setBins(nBinsForMass);
+		string catname;
+		catname = Form("%s",diphotonCats_[cat].c_str());
+		RooRealVar *mass;
+    	int nBinsForMass=4000.;
+		if(diphotonCats_[cat]=="EBEB") 
+		{
+			mass = new RooRealVar (Form("mgg%s",catname.c_str()),Form("mgg%s",catname.c_str()), 230, 10000);
+			nBinsForMass=4000;
+		}else if(diphotonCats_[cat]=="EBEE") {
+			mass = new RooRealVar (Form("mgg%s",catname.c_str()),Form("mgg%s",catname.c_str()), 320, 10000);
+			nBinsForMass=3400;
+		}
+		mass->setBins(nBinsForMass);
 
-  TNtuple *inNT;
+    	TNtuple *inNT;
 		if (isData_){
 			inNT = (TNtuple*)inFile->Get(Form("tree_data_%s_%s",analysisType_.c_str(),diphotonCats_[cat].c_str()));
 		} else {
 			inNT = (TNtuple*)inFile->Get(Form("tree_data_%s_%s",analysisType_.c_str(),diphotonCats_[cat].c_str()));
 		}
 
-	if (verbose) std::cout << "[INFO]  considering nTuple " << inNT->GetName() << std::endl;
-		map<string,int> choices;
-		map<string,std::vector<int> > choices_envelope;
-		map<string,RooAbsPdf*> pdfs;
-		map<string,RooAbsPdf*> allPdfs;
-		RooDataSet *dataFull = new RooDataSet( Form("data_%s",catname.c_str()),"data_unbinned" ,inNT, RooArgSet(*mass) );
+		if (verbose) std::cout << "[INFO]  considering nTuple " << inNT->GetName() << std::endl;
+			map<string,int> choices;
+			map<string,std::vector<int> > choices_envelope;
+			map<string,RooAbsPdf*> pdfs;
+			map<string,RooAbsPdf*> allPdfs;
+			RooDataSet *dataFull = new RooDataSet( Form("data_%s",catname.c_str()),"data_unbinned" ,inNT, RooArgSet(*mass) );
  		if (dataFull){
 			std::cout << "[INFO] opened data for  "  << dataFull->GetName()  <<" - " << dataFull <<std::endl;
-//			if (verbose) dataFull->Print("V");
-            dataFull->Print("V");
+			if (verbose) dataFull->Print("V");
 		}
-	if(diphotonCats_[cat]=="EBEE")
-	    {  
-		mass->setRange(320,1600); //FIXME Need a more configurable method to set range
-//		mass->setRange(320,10000); //FIXME Need a more configurable method to set range
-		nBinsForMass=50;//roughly binning of 25 GeV acoording to EXO-15-004
-	    mass->setBins(nBinsForMass);
+		if(diphotonCats_[cat]=="EBEE"){  
+			mass->setRange(320,1600); //FIXME Need a more configurable method to set range
+			nBinsForMass=64;//roughly binning of 20 GeV acoording to EXO-15-004
+		}else if(diphotonCats_[cat]=="EBEB") {
+			mass->setRange(230,1600); //FIXME Need a more configurable method to set range binning 20 GeV
+			nBinsForMass=69; //roughly binning of 20 GeV according to EXO-15-004
 		}
-	if(diphotonCats_[cat]=="EBEB") 
-	{
-		
-//		mass->setRange(230,10000); //FIXME Need a more configurable method to set range binning 20 GeV
-		mass->setRange(230,1600); //FIXME Need a more configurable method to set range binning 20 GeV
-		nBinsForMass=70; //roughly binning of 25 GeV according to EXO-15-004
-//		nBinsForMass=4000; //roughly binning of 25 GeV according to EXO-15-004
 		mass->setBins(nBinsForMass);
-	}
-//	mass->setMax(2000.);
-	pdfsModel.setObsVar(mass);
-		//TCanvas *t = new TCanvas();
-		//RooPlot *frame = mass->frame();
-		//dataFull->plotOn(frame);
-
-
-	//	RooDataSet *dataBinned;
-	//	string thisdataBinned_name;
-//		string thisdata_name;
-	//	thisdataBinned_name =Form("data_binned_%s",diphotonCats_[cat].c_str());
-	//	thisdataBinned_name =Form("data_binned_%s",diphotonCats_[cat].c_str());
-//		thisdata_name =Form("data__%s",diphotonCats_[cat].c_str());
-//		thisdata_name =Form("data__%s",diphotonCats_[cat].c_str());
-	//	RooDataHist thisdataBinned(thisdataBinned_name.c_str(),"data",*mass,*dataFull);
-	//	dataBinned = (RooDataSet*)&thisdataBinned;
+		pdfsModel.setObsVar(mass);
 
 		RooArgList storedPdfs("store");
 		fprintf(resFile,"\\multicolumn{4}{|c|}{\\textbf{Category %d}} \\\\\n",cat);
@@ -792,7 +764,6 @@ if (saveMultiPdf){
 			std::vector<int> pdforders;
 
 			int counter =0;
-			//	while (prob<0.05){
 			while (prob<0.05 && order < 6){ //FIXME should be around order 3
 			  std::cout << " SCZ In while loop: cat=" << cat << " funcType->c_str()=" << funcType->c_str() << " prob=" << prob << " order=" << order << std::endl;
 				RooAbsPdf *bkgPdf = getPdf(pdfsModel,*funcType,order,Form("ftest_pdf_%d_%s",cat,sqrts_.c_str()));
@@ -808,7 +779,6 @@ if (saveMultiPdf){
 					std::cout << "SCZ about to run fit on " << funcType->c_str() << " order=" << order << std::endl;
 					runFit(bkgPdf,dataFull,&thisNll,&fitStatus,/*max iterations*/10);//bkgPdf->fitTo(*data,Save(true),RooFit::Minimizer("Minuit2","minimize"));
 					std::cout << "SCZ ran fit on " <<funcType->c_str() << " order=" << order << " fitStatus=" << fitStatus << " thisNll=" << thisNll << std::endl;
-					cout << __LINE__<< endl;
 					if (fitStatus!=0) std::cout << "[ERROR] Warning -- Fit status for " << bkgPdf->GetName() << " at " << fitStatus <<std::endl;
 					chi2 = 2.*(prevNll-thisNll);
 					if (chi2<0. && order>1) chi2=0.;
@@ -823,7 +793,6 @@ if (saveMultiPdf){
 					double gofProb=0;
 					// otherwise we get it later ...
 					if (!saveMultiPdf) plot(mass,bkgPdf,dataFull,Form("%s/%s%d_cat%d.png",outDir.c_str(),funcType->c_str(),order,cat),diphotonCats_,cat,fitStatus,&gofProb);
-					cout << __LINE__ << endl;
 					cout << "[INFO]\t " << *funcType << " " << order << " :prevNll " << prevNll << " thisNll " << thisNll << " Chi2 " << chi2 << " prob  " << prob << endl;
 					cout << "-----------------------------------------------------" << endl;
 					//fprintf(resFile,"%15s && %d && %10.2f && %10.2f && %10.2f \\\\\n",funcType->c_str(),order,thisNll,chi2,prob);
@@ -943,22 +912,16 @@ if (saveMultiPdf){
 			std::cout << "// ------------------------------------------------------------------------- //" <<std::endl;
 			std::cout << "[INFO] Simple check of index "<< simplebestFitPdfIndex <<std::endl;
 
-
-			// Save it (also a binned version of the dataset
-			// Save it (also a binned version of the dataset
 			outputws->import(nBackground);
 			plot(mass,pdf,&catIndex,dataFull,Form("%s/multipdf_%s",outDir.c_str(),catname.c_str()),diphotonCats_,cat,bestFitPdfIndex);
 	    	mass->setMax(10000.);
 			if(diphotonCats_[cat]=="EBEB")   		mass->setBins(4000.);
-			if(diphotonCats_[cat]=="EBEE")   		mass->setBins(3400.);
-  //  		mass->Print("v");
+			else if(diphotonCats_[cat]=="EBEE")   		mass->setBins(3400.);
 			outputws->import(*pdf);
-			//outputws->import(*mass);
 			outputws->import(*dataFull);
-
 		}
 
-		}
+	}
 		if (saveMultiPdf){
 			outputfile->cd();
 			outputws->Write();

@@ -402,26 +402,31 @@ RooAbsPdf* PdfModelBuilder::getExponentialSingle(string prefix, int order){
 //MQ
 //number of functions
 RooAbsPdf* PdfModelBuilder::getAtlas(string prefix, int order){
+  if(order<1){
+    cerr << "[WARNING] --  needs to be at least of order 1" << endl;
+    return NULL;
+  }
     string formula_exp="";
     string formula=""; 
     RooArgList *dependents = new RooArgList();
     dependents->add(*obs_var);
     string coeff1 =  Form("%s_coeff1",prefix.c_str());
-    params.insert(pair<string,RooRealVar*>(coeff1, new RooRealVar(coeff1.c_str(),coeff1.c_str(),3. ,-200.0,-2.)));
+    params.insert(pair<string,RooRealVar*>(coeff1, new RooRealVar(coeff1.c_str(),coeff1.c_str(),10. ,-100.0,100.)));
     dependents->add(*params[coeff1]);
-  	for (int i=0; i<=order; i++){
+  	for (int i=1; i<=order; i++){
 		string logc =  Form("%s_log%d",prefix.c_str(),i);
-    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-5,-100.0,100.)));
-		if (i==0){
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-2.,-100.0,100.)));
+		if (i==1){
 			formula_exp = Form("@2");
 		}
 		else{
-			formula_exp += Form(" + (@%d*TMath::Power(log(@0/13000),%d))",i+2,i);
+			formula_exp += Form(" + @%d*(TMath::Power(log(@0/13000),%d))",i+1,i);
 		}
 		dependents->add(*params[logc]);
 	}
   	formula= Form("TMath::Power(1-TMath::Power(@0/13000,1/3),@1)*TMath::Power(@0/13000,%s)",formula_exp.c_str()) ; 
   	RooGenericPdf* atlas = new RooGenericPdf(prefix.c_str(), prefix.c_str(), formula.c_str(),*dependents );
+	atlas->Print();
 	return atlas;
 }
 
@@ -455,7 +460,7 @@ RooAbsPdf* PdfModelBuilder::getVVdijet(string prefix, int order){
 
 
 RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
-     if(order<1 || order > 3){
+     if(order<1  ){
             cerr << "[INFO] -- dijet needs to be at least of order 1 and max 3" << endl;
               return NULL;
                  }
