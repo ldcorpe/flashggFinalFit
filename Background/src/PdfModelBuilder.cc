@@ -411,7 +411,7 @@ RooAbsPdf* PdfModelBuilder::getAtlas(string prefix, int order){
     RooArgList *dependents = new RooArgList();
     dependents->add(*obs_var);
     string coeff1 =  Form("%s_coeff1",prefix.c_str());
-    params.insert(pair<string,RooRealVar*>(coeff1, new RooRealVar(coeff1.c_str(),coeff1.c_str(),10. ,-100.0,100.)));
+    params.insert(pair<string,RooRealVar*>(coeff1, new RooRealVar(coeff1.c_str(),coeff1.c_str(),10. ,-300.0,300.)));
     dependents->add(*params[coeff1]);
   	for (int i=1; i<=order; i++){
 		string logc =  Form("%s_log%d",prefix.c_str(),i);
