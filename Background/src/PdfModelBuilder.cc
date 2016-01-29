@@ -303,7 +303,9 @@ RooAbsPdf* PdfModelBuilder::getLaurentSeries(string prefix, int order){
   // even terms
   for (int i=1; i<=nlower; i++){
     string name = Form("%s_l%d",prefix.c_str(),i);
-    params.insert(pair<string,RooRealVar*>(name, new RooRealVar(name.c_str(),name.c_str(),0.25/order,0.000001,0.999999)));
+//for hgg, exo at upper bouandry 
+//    params.insert(pair<string,RooRealVar*>(name, new RooRealVar(name.c_str(),name.c_str(),0.25/order,0.000001,0.999999)));
+    params.insert(pair<string,RooRealVar*>(name, new RooRealVar(name.c_str(),name.c_str(),0.25/order,0.000001,10.)));
     plist->add(*params[name]);
     string pname =  Form("%s_powl%d",prefix.c_str(),i);
     utilities.insert(pair<string,RooAbsPdf*>(pname, new RooPower(pname.c_str(),pname.c_str(),*obs_var,RooConst(-4.-i))));
@@ -424,7 +426,7 @@ RooAbsPdf* PdfModelBuilder::getAtlas(string prefix, int order){
 		}
 		dependents->add(*params[logc]);
 	}
-  	formula= Form("TMath::Power(1-TMath::Power(@0/13000,1/3),@1)*TMath::Power(@0/13000,%s)",formula_exp.c_str()) ; 
+  	formula= Form("TMath::Max(1e-50,TMath::Power(1-TMath::Power(@0/13000,1/3),@1)*TMath::Power(@0/13000,%s))",formula_exp.c_str()) ; 
   	RooGenericPdf* atlas = new RooGenericPdf(prefix.c_str(), prefix.c_str(), formula.c_str(),*dependents );
 	atlas->Print();
 	return atlas;
@@ -436,15 +438,15 @@ RooAbsPdf* PdfModelBuilder::getVVdijet(string prefix, int order){
     RooArgList *dependents = new RooArgList();
     dependents->add(*obs_var);
     string coeff1 =  Form("%s_coeff1",prefix.c_str());
-    params.insert(pair<string,RooRealVar*>(coeff1, new RooRealVar(coeff1.c_str(),coeff1.c_str(),0. ,-100.0,100.)));
+    params.insert(pair<string,RooRealVar*>(coeff1, new RooRealVar(coeff1.c_str(),coeff1.c_str(),0. ,-30.0,30.)));
     dependents->add(*params[coeff1]);
     string coeff2 =  Form("%s_coeff2",prefix.c_str());
-    params.insert(pair<string,RooRealVar*>(coeff2, new RooRealVar(coeff2.c_str(),coeff2.c_str(),10. ,-100.0,500.)));
+    params.insert(pair<string,RooRealVar*>(coeff2, new RooRealVar(coeff2.c_str(),coeff2.c_str(),10. ,-30.0,500.)));
     dependents->add(*params[coeff1]);
   	for (int i=0; i<=order; i++){
 		string logc =  Form("%s_log%d",prefix.c_str(),i);
 		if (i==0){
-    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-5.0,-100.0,0.0)));
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-5.0,-30.0,0.0)));
 			formula_exp = Form("@2");
 		}
 		else{
@@ -453,7 +455,7 @@ RooAbsPdf* PdfModelBuilder::getVVdijet(string prefix, int order){
 		}
 		dependents->add(*params[logc]);
 	}
-  	formula= Form("@1*TMath::Power(1-%s,@2)*TMath::Power(@0/13000,@3)",formula_exp.c_str()) ; 
+  	formula= Form("TMath::Max(1e-50,@1*TMath::Power(1-%s,@2)*TMath::Power(@0/13000,@3))",formula_exp.c_str()) ; 
   	RooGenericPdf* vvdijet = new RooGenericPdf(prefix.c_str(), prefix.c_str(), formula.c_str(),*dependents );
 	return vvdijet;
 }
@@ -461,7 +463,7 @@ RooAbsPdf* PdfModelBuilder::getVVdijet(string prefix, int order){
 
 RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
      if(order<1  ){
-            cerr << "[INFO] -- dijet needs to be at least of order 1 and max 3" << endl;
+            cerr << "[INFO] -- dijet needs to be at least of order 2 to be defined and to describe data correctl" << endl;
               return NULL;
                  }
         else {
@@ -516,7 +518,7 @@ RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
 		}
 		dependents->add(*params[logc]);
 	    }
-  	formula= Form("TMath::Exp(%s)",formula_exp.c_str()) ; 
+  	formula= Form("TMath::Max(1e-50,TMath::Exp(%s))",formula_exp.c_str()) ; 
   	RooGenericPdf* dijet = new RooGenericPdf(prefix.c_str(), prefix.c_str(), formula.c_str(),*dependents );
 	dijet->Print();
     cout << "--------------------------" << endl;
@@ -557,7 +559,7 @@ RooAbsPdf* PdfModelBuilder::getExpow(string prefix, int order){
 			dependents->add(*params[expc]);
 			dependents->add(*params[powc]);
 		}
-  		formula= Form("TMath::Power(@0,%s)*TMath::Exp(%s)",formula_pow.c_str(),formula_exp.c_str()) ; 
+  		formula= Form("TMath::Max(1e-50,TMath::Power(@0,%s)*TMath::Exp(%s))",formula_pow.c_str(),formula_exp.c_str()) ; 
 		RooGenericPdf* expow = new RooGenericPdf(prefix.c_str(), prefix.c_str(),formula.c_str(),*dependents );
 		return expow;
 	}
