@@ -1,5 +1,4 @@
 #include "TCanvas.h"
-
 #include "RooPlot.h"
 #include "RooBernstein.h"
 #include "RooChebychev.h"
@@ -25,10 +24,11 @@
 
 #include "HiggsAnalysis/CombinedLimit/interface/HGGRooPdfs.h"
 #include "HiggsAnalysis/CombinedLimit/interface/RooBernsteinFast.h"
-
+#include "../../../diphotons/RooUtils/interface/RooPowLogPdf.h"
 using namespace std;
 using namespace RooFit;
 using namespace boost;
+//to use custom pdf
 
 PdfModelBuilder::PdfModelBuilder():
   obs_var_set(false),
@@ -471,7 +471,6 @@ RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
     string formula=""; 
     RooArgList *dependents = new RooArgList();
     dependents->add(*obs_var);
-    
   	for (int i=1; i<=order; i++){
 		string logc =  Form("%s_log%d",prefix.c_str(),i);
     
@@ -518,8 +517,17 @@ RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
 		}
 		dependents->add(*params[logc]);
 	    }
-  	formula= Form("TMath::Max(1e-50,TMath::Exp(%s))",formula_exp.c_str()) ; 
-  	RooGenericPdf* dijet = new RooGenericPdf(prefix.c_str(), prefix.c_str(), formula.c_str(),*dependents );
+  	formula= Form("TMath::Max(1e-50,TMath::Exp(%s))",formula_exp.c_str()) ;
+    RooAbsPdf* dijet;	
+	if(order==1){
+  	dijet= new RooPowLogPdf(prefix.c_str(), prefix.c_str(),*((RooAbsReal*)dependents->at(0)),*((RooAbsReal*)dependents->at(1)) ,RooConst(0.));
+	}
+	else if(order==2){
+  	dijet= new RooPowLogPdf(prefix.c_str(), prefix.c_str(),*((RooAbsReal*)dependents->at(0)),*((RooAbsReal*)dependents->at(1)) ,*((RooAbsReal*)dependents->at(2)));
+	}
+	else{
+	dijet = new RooGenericPdf(prefix.c_str(), prefix.c_str(), formula.c_str(),*dependents );
+	}
 	dijet->Print();
     cout << "--------------------------" << endl;
         return dijet;
