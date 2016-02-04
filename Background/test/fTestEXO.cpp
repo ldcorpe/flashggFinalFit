@@ -99,6 +99,8 @@ void runFit(RooAbsPdf *pdf, RooDataSet *data, double *NLL, int *stat_t, int MaxT
 	*stat_t = stat;
 	*NLL = minnll;
 }
+
+//Ftest for bias studies
 double getProbabilityFtest(double chi2, int ndof,RooAbsPdf *pdfNull, RooAbsPdf *pdfTest, RooRealVar *mass, RooDataSet *data, std::string name){
 //ndof just the difference between the two orders 
   double prob_asym = TMath::Prob(chi2,ndof);
@@ -673,21 +675,21 @@ if (saveMultiPdf){
 		} */
 	}
 	vector<string> functionClasses;
-    functionClasses.push_back("Dijet");
-    functionClasses.push_back("Exponential");
-	functionClasses.push_back("Expow");
-  //  functionClasses.push_back("PowerLaw");
-    functionClasses.push_back("Laurent");
+     functionClasses.push_back("Dijet");
+  //   functionClasses.push_back("Exponential");
+//	functionClasses.push_back("Expow");
+    functionClasses.push_back("PowerLaw");
+//    functionClasses.push_back("Laurent");
 	functionClasses.push_back("Atlas");
 //	functionClasses.push_back("VVdijet");
 	map<string,string> namingMap;
  	namingMap.insert(pair<string,string>("Dijet","dijet"));
-	namingMap.insert(pair<string,string>("Atlas","atlas"));
+//	namingMap.insert(pair<string,string>("Exponential","exp"));
 //	namingMap.insert(pair<string,string>("VVdijet","vvdijet"));
-	namingMap.insert(pair<string,string>("Exponential","exp"));
-	namingMap.insert(pair<string,string>("Expow","expow"));
-//	namingMap.insert(pair<string,string>("PowerLaw","pow"));
-	namingMap.insert(pair<string,string>("Laurent","lau"));
+//	namingMap.insert(pair<string,string>("Expow","expow"));
+	namingMap.insert(pair<string,string>("PowerLaw","pow"));
+//	namingMap.insert(pair<string,string>("Laurent","lau"));
+	namingMap.insert(pair<string,string>("Atlas","atlas"));
 	// store results here
 
 	FILE *resFile ;
@@ -764,7 +766,7 @@ if (saveMultiPdf){
 			std::vector<int> pdforders;
 
 			int counter =0;
-			while (prob<0.05 && order < 5){ //FIXME should be around order 3
+			while (prob<0.05 && order < 4){ //FIXME should be around order 3
 			  std::cout << " SCZ In while loop: cat=" << cat << " funcType->c_str()=" << funcType->c_str() << " prob=" << prob << " order=" << order << std::endl;
 				RooAbsPdf *bkgPdf = getPdf(pdfsModel,*funcType,order,Form("ftest_pdf_%d_%s",cat,sqrts_.c_str()));
 				if (!bkgPdf){
@@ -854,7 +856,7 @@ if (saveMultiPdf){
 						plot(mass,bkgPdf,dataFull,Form("%s/%s%d_cat%d",outDir.c_str(),funcType->c_str(),order,cat),diphotonCats_,cat,fitStatus,&gofProb,rungofToys);
 
                              cout << "gofProb " << gofProb<< " (prob) " << prob << "upperEnvThres" << upperEnvThreshold << endl;
-						if ((prob < upperEnvThreshold) ) { // Looser requirements for the envelope  
+						if ((prob < upperEnvThreshold) && order <5 ) { // Looser requirements for the envelope  
 							if (gofProb > 0.01 || order == truthOrder ) {  // Good looking fit or one of our regular truth functions
 
 								std::cout << "[INFO] Adding to Envelope " << bkgPdf->GetName() << " "<< gofProb 
@@ -888,7 +890,7 @@ if (saveMultiPdf){
 		choices_envelope_vec.push_back(choices_envelope);
 		pdfs_vec.push_back(pdfs);
 
-		plot(mass,pdfs,dataFull,Form("%s/truths_cat%d",outDir.c_str(),cat),diphotonCats_,cat);
+		//plot(mass,pdfs,dataFull,Form("%s/truths_cat%d",outDir.c_str(),cat),diphotonCats_,cat);
 
 		if (saveMultiPdf){
 
@@ -901,7 +903,8 @@ if (saveMultiPdf){
 			RooMultiPdf *pdf = new RooMultiPdf(Form("model_bkg_%s",catname.c_str()),"all pdfs",catIndex,storedPdfs);
 			RooRealVar nBackground(Form("model_bkg_%s_norm",catname.c_str()),"nbkg",dataFull->sumEntries());
 			//double check the best pdf!
-			int bestFitPdfIndex = getBestFitFunction(pdf,dataFull,&catIndex,!verbose);
+	//		int bestFitPdfIndex = getBestFitFunction(pdf,dataFull,&catIndex,!verbose);
+			int bestFitPdfIndex =1;//FIXME should not be necessary as toyFrequentist resets
 			catIndex.setIndex(bestFitPdfIndex);
 			std::cout << "// ------------------------------------------------------------------------- //" <<std::endl; 
 			std::cout << "[INFO] Created MultiPdf " << pdf->GetName() << ", in Category " << cat << " with a total of " << catIndex.numTypes() << " pdfs"<< std::endl;
