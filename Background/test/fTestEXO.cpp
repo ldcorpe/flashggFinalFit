@@ -320,8 +320,7 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
 
     TH1F toyhist(Form("gofTest_%s.pdf",pdf->GetName()),";Chi2;",50,medianChi2-5*rms,medianChi2+5*rms);
     for (std::vector<double>::iterator itx = toy_chi2.begin();itx!=toy_chi2.end();itx++){
-      toyhist.Fill((*itx));
-    }
+      toyhist.Fill((*itx));}
     toyhist.Draw();
 
     TArrow lData(chi2*(nBinsForMass-np),toyhist.GetMaximum(),chi2*(nBinsForMass-np),0);
@@ -676,16 +675,16 @@ if (saveMultiPdf){
 	}
 	vector<string> functionClasses;
      functionClasses.push_back("Dijet");
-  //   functionClasses.push_back("Exponential");
+//     functionClasses.push_back("Exponential");
 //	functionClasses.push_back("Expow");
     functionClasses.push_back("PowerLaw");
 //    functionClasses.push_back("Laurent");
 	functionClasses.push_back("Atlas");
-//	functionClasses.push_back("VVdijet");
+	functionClasses.push_back("VVdijet");
 	map<string,string> namingMap;
  	namingMap.insert(pair<string,string>("Dijet","dijet"));
 //	namingMap.insert(pair<string,string>("Exponential","exp"));
-//	namingMap.insert(pair<string,string>("VVdijet","vvdijet"));
+	namingMap.insert(pair<string,string>("VVdijet","vvdijet"));
 //	namingMap.insert(pair<string,string>("Expow","expow"));
 	namingMap.insert(pair<string,string>("PowerLaw","pow"));
 //	namingMap.insert(pair<string,string>("Laurent","lau"));
@@ -903,8 +902,8 @@ if (saveMultiPdf){
 			RooMultiPdf *pdf = new RooMultiPdf(Form("model_bkg_%s",catname.c_str()),"all pdfs",catIndex,storedPdfs);
 			RooRealVar nBackground(Form("model_bkg_%s_norm",catname.c_str()),"nbkg",dataFull->sumEntries());
 			//double check the best pdf!
-	//		int bestFitPdfIndex = getBestFitFunction(pdf,dataFull,&catIndex,!verbose);
-			int bestFitPdfIndex =1;//FIXME should not be necessary as toyFrequentist resets
+			int bestFitPdfIndex = getBestFitFunction(pdf,dataFull,&catIndex,!verbose);
+//			int bestFitPdfIndex =0;//FIXME should not be necessary as toyFrequentist resets
 			catIndex.setIndex(bestFitPdfIndex);
 			std::cout << "// ------------------------------------------------------------------------- //" <<std::endl; 
 			std::cout << "[INFO] Created MultiPdf " << pdf->GetName() << ", in Category " << cat << " with a total of " << catIndex.numTypes() << " pdfs"<< std::endl;
