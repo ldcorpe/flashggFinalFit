@@ -83,9 +83,7 @@ void runFit(RooAbsPdf *pdf, RooDataSet *data, double *NLL, int *stat_t, int MaxT
 	while (stat!=0){
 	  if (ntries>=MaxTries) break;
 	  std::cout << "SCZ current try " << ntries << " stat=" << stat << " minnll=" << minnll << std::endl;
-	  std::cout << "----------------------------- BEFORE FIT-------------------------------" << std::endl;
 	 // params_test->Print("v");
-	  std::cout << "-----------------------------------------------------------------------" << std::endl;
 	  RooFitResult *fitTest = pdf->fitTo(*data,RooFit::Save(1)
 		,RooFit::Minimizer("Minuit2","minimize"),RooFit::Offset(kTRUE),RooFit::Strategy(2),RooFit::SumW2Error(kTRUE)); //FIXME
           stat = fitTest->status();
@@ -104,7 +102,7 @@ void runFit(RooAbsPdf *pdf, RooDataSet *data, double *NLL, int *stat_t, int MaxT
 double getProbabilityFtest(double chi2, int ndof,RooAbsPdf *pdfNull, RooAbsPdf *pdfTest, RooRealVar *mass, RooDataSet *data, std::string name){
 //ndof just the difference between the two orders 
   double prob_asym = TMath::Prob(chi2,ndof);
-  std::cout << " SCZ name=" << name << " chi2=" << chi2 << " ndof=" << ndof << " prob_asym=" << prob_asym << " runFtestCheckWithToys=" << runFtestCheckWithToys << std::endl;
+  std::cout << "Prob(chi2,1): name=" << name << " chi2=" << chi2 << " ndof=" << ndof << " prob_asym=" << prob_asym << " runFtestCheckWithToys=" << runFtestCheckWithToys << std::endl;
   if (!runFtestCheckWithToys){
 	  return prob_asym;
   }
@@ -224,7 +222,6 @@ double getProbabilityFtest(double chi2, int ndof,RooAbsPdf *pdfNull, RooAbsPdf *
   can->SaveAs(Form("%s.pdf",name.c_str()));
   can->SaveAs(Form("%s.root",name.c_str()));
 
-  cout << " SCZ Just saved, e.g., " << name  << ".png" << endl;
 
   TCanvas *stas =new TCanvas();
   toyhistStatT.SetLineColor(1); 
@@ -249,9 +246,8 @@ double getProbabilityFtest(double chi2, int ndof,RooAbsPdf *pdfNull, RooAbsPdf *
   if(st_n!=0 || st_t !=0){
 	cout << "[ERROR]  ---- ntoys " << ntoys << " from those n-fit failed " << st_n << "  from those n+1 fit failed " << st_t << endl; 
   }
-  cout << "Probability with TMath::Prob function " << prob_asym << " Probability with toys " << prob  << endl; 
+  cout << "[INFO] probability with TMath::Prob function " << prob_asym << " Probability with toys " << prob  << endl; 
   // Still return the asymptotic prob (usually its close to the toys one)
-  cout << " SCZ prob=" << prob << " prob_asym=" << prob_asym << std::endl;
   return prob;
   //return prob_asym;
 
@@ -674,21 +670,21 @@ if (saveMultiPdf){
 		} */
 	}
 	vector<string> functionClasses;
-     functionClasses.push_back("Dijet");
-//     functionClasses.push_back("Exponential");
+   //  functionClasses.push_back("Dijet");
+   // functionClasses.push_back("Exponential");
 //	functionClasses.push_back("Expow");
-    functionClasses.push_back("PowerLaw");
-//    functionClasses.push_back("Laurent");
-	functionClasses.push_back("Atlas");
-	functionClasses.push_back("VVdijet");
+//    functionClasses.push_back("PowerLaw");
+    functionClasses.push_back("Laurent");
+//	functionClasses.push_back("Atlas");
+//	functionClasses.push_back("VVdijet");
 	map<string,string> namingMap;
- 	namingMap.insert(pair<string,string>("Dijet","dijet"));
+ //	namingMap.insert(pair<string,string>("Dijet","dijet"));
 //	namingMap.insert(pair<string,string>("Exponential","exp"));
-	namingMap.insert(pair<string,string>("VVdijet","vvdijet"));
+//	namingMap.insert(pair<string,string>("VVdijet","vvdijet"));
 //	namingMap.insert(pair<string,string>("Expow","expow"));
-	namingMap.insert(pair<string,string>("PowerLaw","pow"));
-//	namingMap.insert(pair<string,string>("Laurent","lau"));
-	namingMap.insert(pair<string,string>("Atlas","atlas"));
+//	namingMap.insert(pair<string,string>("PowerLaw","pow"));
+	namingMap.insert(pair<string,string>("Laurent","lau"));
+//	namingMap.insert(pair<string,string>("Atlas","atlas"));
 	// store results here
 
 	FILE *resFile ;
@@ -766,7 +762,7 @@ if (saveMultiPdf){
 
 			int counter =0;
 			while (prob<0.05 && order < 4){ //FIXME should be around order 3
-			  std::cout << " SCZ In while loop: cat=" << cat << " funcType->c_str()=" << funcType->c_str() << " prob=" << prob << " order=" << order << std::endl;
+			 // std::cout << " In while loop: cat=" << cat << " " << funcType->c_str() << " prob=" << prob << " order=" << order << std::endl;
 				RooAbsPdf *bkgPdf = getPdf(pdfsModel,*funcType,order,Form("ftest_pdf_%d_%s",cat,sqrts_.c_str()));
 				if (!bkgPdf){
 					// assume this order is not allowed
@@ -777,10 +773,10 @@ if (saveMultiPdf){
 					//RooFitResult *fitRes = bkgPdf->fitTo(*data,Save(true),RooFit::Minimizer("Minuit2","minimize"));
 					int fitStatus = 0;
 					//thisNll = fitRes->minNll();
-					std::cout << "SCZ about to run fit on " << funcType->c_str() << " order=" << order << std::endl;
+					std::cout << "about to run fit on " << funcType->c_str() << " order=" << order << std::endl;
 					runFit(bkgPdf,dataFull,&thisNll,&fitStatus,/*max iterations*/10);//bkgPdf->fitTo(*data,Save(true),RooFit::Minimizer("Minuit2","minimize"));
-					std::cout << "SCZ ran fit on " <<funcType->c_str() << " order=" << order << " fitStatus=" << fitStatus << " thisNll=" << thisNll << std::endl;
-					if (fitStatus!=0) std::cout << "[ERROR] Warning -- Fit status for " << bkgPdf->GetName() << " at " << fitStatus <<std::endl;
+					std::cout << "ran fit on " <<funcType->c_str() << " order=" << order << " fitStatus=" << fitStatus << " thisNll=" << thisNll << std::endl;
+					if (fitStatus!=0) std::cout << "[ERROR] -- Fit status for " << bkgPdf->GetName() << " at " << fitStatus <<std::endl;
 					chi2 = 2.*(prevNll-thisNll);
 					if (chi2<0. && order>1) chi2=0.;
 					if (prev_pdf!=NULL){
@@ -806,7 +802,8 @@ if (saveMultiPdf){
 				}
 				counter++;
 			}
-			std::cout << " SCZ Just left while loop: cat=" << cat << " prob=" << prob << " order=" << order << std::endl;
+			cout << "-----------------------------------------------------" << endl;
+			std::cout << "Just left while loop: cat=" << cat << " prob=" << prob << " order=" << order << std::endl;
 			fprintf(resFile,"%15s & %d & %5.2f & %5.2f \\\\\n",funcType->c_str(),cache_order+1,chi2,prob);
 			choices.insert(pair<string,int>(*funcType,cache_order));
 			pdfs.insert(pair<string,RooAbsPdf*>(Form("%s%d",funcType->c_str(),cache_order),cache_pdf));
@@ -896,21 +893,24 @@ if (saveMultiPdf){
 			// Put selectedModels into a MultiPdf
 			string catindexname;
 			string catname;
-				catindexname = Form("pdfindex_%s",diphotonCats_[cat].c_str());
-				catname = Form("%s",diphotonCats_[cat].c_str());
+			catindexname = Form("pdfindex_%s",diphotonCats_[cat].c_str());
+			catname = Form("%s",diphotonCats_[cat].c_str());
 			RooCategory catIndex(catindexname.c_str(),"c");
 			RooMultiPdf *pdf = new RooMultiPdf(Form("model_bkg_%s",catname.c_str()),"all pdfs",catIndex,storedPdfs);
 			RooRealVar nBackground(Form("model_bkg_%s_norm",catname.c_str()),"nbkg",dataFull->sumEntries());
 			//double check the best pdf!
-			int bestFitPdfIndex = getBestFitFunction(pdf,dataFull,&catIndex,!verbose);
-//			int bestFitPdfIndex =0;//FIXME should not be necessary as toyFrequentist resets
+		//	int bestFitPdfIndex = getBestFitFunction(pdf,dataFull,&catIndex,!verbose);
+			int bestFitPdfIndex =0;//FIXME should not be necessary as toyFrequentist resets
 			catIndex.setIndex(bestFitPdfIndex);
+			std::cout << "// ------------------------------------------------------------------------- //" <<std::endl; 
+			std::cout << "// ------------------------------------------------------------------------- //" <<std::endl; 
 			std::cout << "// ------------------------------------------------------------------------- //" <<std::endl; 
 			std::cout << "[INFO] Created MultiPdf " << pdf->GetName() << ", in Category " << cat << " with a total of " << catIndex.numTypes() << " pdfs"<< std::endl;
 			storedPdfs.Print();
 			std::cout << "[INFO] Best Fit Pdf = " << bestFitPdfIndex << ", " << storedPdfs.at(bestFitPdfIndex)->GetName() << std::endl;
 			std::cout << "// ------------------------------------------------------------------------- //" <<std::endl;
 			std::cout << "[INFO] Simple check of index "<< simplebestFitPdfIndex <<std::endl;
+			std::cout << "// ------------------------------------------------------------------------- //" <<std::endl; 
 
 			outputws->import(nBackground);
 			plot(mass,pdf,&catIndex,dataFull,Form("%s/multipdf_%s",outDir.c_str(),catname.c_str()),diphotonCats_,cat,bestFitPdfIndex);
@@ -929,6 +929,7 @@ if (saveMultiPdf){
 		}
 
 		FILE *dfile = fopen(datfile.c_str(),"w");
+			std::cout << "// ------------------------------------------------------------------------- //" <<std::endl;
 		cout << "[RESULT] Recommended options" << endl;
 
 		for (int cat=startingCategory; cat<ncats; cat++){
