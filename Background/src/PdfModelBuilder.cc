@@ -274,12 +274,12 @@ RooAbsPdf* PdfModelBuilder::getPowerLawSingle(string prefix, int order){
       utilities.insert(pair<string,RooAbsPdf*>(ename, new RooPower(ename.c_str(),ename.c_str(),*obs_var,*params[name])));
       pows->add(*utilities[ename]);
     }
-    cout << "RooArgLists..." << endl;
-    fracs->Print("v");
-    pows->Print("v");
-    cout << "Function..." << endl;
+ //   cout << "RooArgLists..." << endl;
+  //  fracs->Print("v");
+  //  pows->Print("v");
+   // cout << "Function..." << endl;
     RooAbsPdf *pow = new RooAddPdf(prefix.c_str(),prefix.c_str(),*pows,*fracs,true); 
-    pow->Print("v");
+//    pow->Print("v");
     return pow;
     //bkgPdfs.insert(pair<string,RooAbsPdf*>(pow->GetName(),pow));
   }
@@ -428,7 +428,7 @@ RooAbsPdf* PdfModelBuilder::getExponentialSingle(string prefix, int order){
 //MQ
 //number of functions
 RooAbsPdf* PdfModelBuilder::getAtlas(string prefix, int order){
-  if(order<1 || order > 1){
+  if(order<1 ){
     cerr << "[WARNING] --  needs to be at least of order 1" << endl;
     return NULL;
   }
@@ -510,7 +510,7 @@ RooAbsPdf* PdfModelBuilder::getVVdijet(string prefix, int order){
 
 
 RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
-     if(order<2 || order > 2  ){
+     if(order<2  ){
             cerr << "[INFO] -- dijet needs to be at least of order 2 to be defined and to describe data correct" << endl;
               return NULL;
                  }
@@ -523,10 +523,10 @@ RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
 		string logc =  Form("%s_log%d",prefix.c_str(),i);
     
                 if(order ==2 && i==1) {//FIXME make setVal nicer
-    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),4.5,-50.0,50.)));
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),4.5,-100.0,100.)));
 		}
 		if(order==2 && i==2) {
-    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-0.8,-50.0,50.0)));
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-0.8,-100.0,100.0)));
 		}
 	
                 if(order ==3 && i==1) {//FIXME make setVal nicer

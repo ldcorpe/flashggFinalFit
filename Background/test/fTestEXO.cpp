@@ -96,9 +96,8 @@ void runFit(RooAbsPdf *pdf, RooDataSet *data, double *NLL, int *stat_t, int MaxT
 	  RooMinimizer *minuit_fitTest = new RooMinimizer(*nll);
 	  minuit_fitTest->setOffsetting(kTRUE);
 	  minuit_fitTest->setStrategy(2);
-	  minuit_fitTest->minimize("Minuit2");
-	  minuit_fitTest->migrad();
-	  minuit_fitTest->hesse();
+	  minuit_fitTest->minimize("Minuit2","minimize");
+//	  minuit_fitTest->hesse();
 	  fitTest = minuit_fitTest->save("fitTest","fitTest");
 	  offset= nll->offset();
 	 // cout << nll->isOffsetting()<< endl;
@@ -110,7 +109,7 @@ void runFit(RooAbsPdf *pdf, RooDataSet *data, double *NLL, int *stat_t, int MaxT
 	  if (stat!=0) params_test->assignValueOnly(fitTest->randomizePars());
 	  ntries++; 
 	}
-	cout << "----------offset------------------" << endl;
+	cout << "------------------------OFFSET-----------------------------" << endl;
 	cout << "end of runFit stat=" << stat << " offset=" << offset << " minnll with offset=" << minnll_woffset << " diff= " << minnll<< endl;
 	*stat_t = stat;
 	*NLL = minnll;
@@ -689,7 +688,7 @@ if (saveMultiPdf){
 	}
 	vector<string> functionClasses;
     functionClasses.push_back("Dijet");
- //   functionClasses.push_back("Exponential");
+    functionClasses.push_back("Exponential");
 //	functionClasses.push_back("Expow");
     functionClasses.push_back("PowerLaw");
     functionClasses.push_back("Laurent");
@@ -697,7 +696,7 @@ if (saveMultiPdf){
 	functionClasses.push_back("VVdijet");
 	map<string,string> namingMap;
  	namingMap.insert(pair<string,string>("Dijet","dijet"));
-//	namingMap.insert(pair<string,string>("Exponential","exp"));
+	namingMap.insert(pair<string,string>("Exponential","exp"));
 	namingMap.insert(pair<string,string>("VVdijet","vvdijet"));
 //	namingMap.insert(pair<string,string>("Expow","expow"));
 	namingMap.insert(pair<string,string>("PowerLaw","pow"));
@@ -847,7 +846,7 @@ if (saveMultiPdf){
 					RooAbsPdf *bkgPdf = getPdf(pdfsModel,*funcType,order,Form("env_pdf_%d_%s",cat,sqrts_.c_str()));
 					if (!bkgPdf ){
 						// assume this order is not allowed
-						if (order >6) { std::cout << " [WARNING] could not add  " << std::endl; break ;}
+						if (order >6) { std::cout << "[WARNING] could not add  " << std::endl; break ;}
 						order++;
 					}
 
@@ -871,7 +870,7 @@ if (saveMultiPdf){
 						// Calculate goodness of fit for the thing to be included (will use toys for lowstats)!
 						double gofProb =0; 
 						plot(mass,bkgPdf,dataFull,Form("%s/%s%d_cat%d",outDir.c_str(),funcType->c_str(),order,cat),diphotonCats_,cat,fitStatus,&gofProb,rungofToys);
-
+							cout << "" << endl;
                              cout << "gofProb (via Toys if necessary): " << gofProb<< " prob via TMath::Prob(chi2,order-prev_order) function: " << prob << endl;
 						if ((prob < upperEnvThreshold) && order <4 ) { // Looser requirements for the envelope  
 							if (gofProb > 0.01 || order == truthOrder ) {  // Good looking fit or one of our regular truth functions
