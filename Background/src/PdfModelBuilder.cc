@@ -511,7 +511,7 @@ RooAbsPdf* PdfModelBuilder::getVVdijet(string prefix, int order){
 
 RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
      if(order<2 || order > 2  ){
-            cerr << "[INFO] -- dijet needs to be at least of order 2 to be defined and to describe data correctl" << endl;
+            cerr << "[INFO] -- dijet needs to be at least of order 2 to be defined and to describe data correct" << endl;
               return NULL;
                  }
         else {
@@ -523,10 +523,10 @@ RooAbsPdf* PdfModelBuilder::getDijet(string prefix, int order){
 		string logc =  Form("%s_log%d",prefix.c_str(),i);
     
                 if(order ==2 && i==1) {//FIXME make setVal nicer
-    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),4.5,-100.0,100.)));
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),4.5,-50.0,50.)));
 		}
 		if(order==2 && i==2) {
-    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-0.8,-100.0,100.0)));
+    	params.insert(pair<string,RooRealVar*>(logc, new RooRealVar(logc.c_str(),logc.c_str(),-0.8,-50.0,50.0)));
 		}
 	
                 if(order ==3 && i==1) {//FIXME make setVal nicer

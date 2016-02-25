@@ -80,21 +80,38 @@ void runFit(RooAbsPdf *pdf, RooDataSet *data, double *NLL, int *stat_t, int MaxT
 	std::cout << "--------------------- BEFORE ITERATIONS-------------------------------" << std::endl;
 	int stat=1;
 	double minnll=10e8;
+	double offset=10e8;
+	double minnll_woffset=10e8;
+
 	while (stat!=0){
 	  if (ntries>=MaxTries) break;
-	  std::cout << "SCZ current try " << ntries << " stat=" << stat << " minnll=" << minnll << std::endl;
+	  //std::cout << "current try " << ntries << " stat=" << stat << " minnll=" << minnll << std::endl;
 	std::cout << "--------------------- FITTING-------------------------------" << std::endl;
-	 // params_test->Print("v");
-	  RooFitResult *fitTest = pdf->fitTo(*data,RooFit::Save(1)
-		,RooFit::Minimizer("Minuit2","minimize"),RooFit::Offset(kFALSE),RooFit::Strategy(2),RooFit::SumW2Error(kTRUE)); //FIXME
-          stat = fitTest->status();
-	  minnll = fitTest->minNll();
+	 // RooFitResult *fitTest = pdf->fitTo(*data,RooFit::Save(1),RooFit::Minimizer("Minuit2","minimize"),RooFit::Offset(kTRUE),RooFit::Strategy(2),RooFit::SumW2Error(kFALSE)); 
+     // stat = fitTest->status();
+	 // minnll = fitTest->minNll();
+	 //new fit routine to get offset 
+	  RooNLLVar *nll=new RooNLLVar("nll","nll",*pdf,*data);
+	  RooFitResult *fitTest;
+	  RooMinimizer *minuit_fitTest = new RooMinimizer(*nll);
+	  minuit_fitTest->setOffsetting(kTRUE);
+	  minuit_fitTest->setStrategy(2);
+	  minuit_fitTest->minimize("Minuit2");
+	  minuit_fitTest->migrad();
+	  minuit_fitTest->hesse();
+	  fitTest = minuit_fitTest->save("fitTest","fitTest");
+	  offset= nll->offset();
+	 // cout << nll->isOffsetting()<< endl;
+	  //cout << nll->offsetCarry()<< endl;
+	  minnll_woffset=fitTest->minNll();
+	  minnll=-offset-minnll_woffset;
+	  stat=fitTest->status();
+
 	  if (stat!=0) params_test->assignValueOnly(fitTest->randomizePars());
 	  ntries++; 
 	}
-	cout << "SCZ end of runFit stat=" << stat << " minnll=" << minnll << endl;
-	//MQ likelihood scan
-    //RooNLLVar nll("nll","nll",*pdf,*data) ;
+	cout << "----------offset------------------" << endl;
+	cout << "end of runFit stat=" << stat << " offset=" << offset << " minnll with offset=" << minnll_woffset << " diff= " << minnll<< endl;
 	*stat_t = stat;
 	*NLL = minnll;
 }
@@ -111,8 +128,8 @@ double getProbabilityFtest(double chi2, int ndof,RooAbsPdf *pdfNull, RooAbsPdf *
   
   // fit the pdfs to the data and keep this fit Result (for randomizing)
   RooFitResult *fitNullData = pdfNull->fitTo(*data,RooFit::Save(1),RooFit::Strategy(2)
-		,RooFit::Minimizer("Minuit2","minimize"),RooFit::Offset(kFALSE),RooFit::SumW2Error(kTRUE),RooFit::PrintLevel(-1)); //FIXME
-  RooFitResult *fitTestData = pdfTest->fitTo(*data,RooFit::Offset(kFALSE),RooFit::Strategy(2),RooFit::Save(1)
+		,RooFit::Minimizer("Minuit2","minimize"),RooFit::Offset(kTRUE),RooFit::SumW2Error(kTRUE),RooFit::PrintLevel(-1)); //FIXME
+  RooFitResult *fitTestData = pdfTest->fitTo(*data,RooFit::Offset(kTRUE),RooFit::Strategy(2),RooFit::Save(1)
 		,RooFit::Minimizer("Minuit2","minimize"),RooFit::SumW2Error(kTRUE),RooFit::PrintLevel(-1)); //FIXME
 
   // Ok we want to check the distribution in toys then 
@@ -164,7 +181,7 @@ double getProbabilityFtest(double chi2, int ndof,RooAbsPdf *pdfNull, RooAbsPdf *
 	  if (ntries>=MaxTries) break;
 //	  RooFitResult *fitNull = pdfNull->fitTo(*binnedtoy,RooFit::Save(1),RooFit::Offset(kTRUE),RooFit::Strategy(2),RooFit::SumW2Error(kTRUE) //FIXME
 //		,RooFit::Minimizer("Minuit2","minimize"),RooFit::Minos(0),RooFit::Hesse(0),RooFit::PrintLevel(-1));
-	  RooFitResult *fitNull = pdfNull->fitTo(*binnedtoy,RooFit::Save(1),RooFit::Offset(kFALSE),RooFit::Strategy(2),RooFit::SumW2Error(kTRUE) //FIXME
+	  RooFitResult *fitNull = pdfNull->fitTo(*binnedtoy,RooFit::Save(1),RooFit::Offset(kTRUE),RooFit::Strategy(2),RooFit::SumW2Error(kTRUE) //FIXME
 		,RooFit::Minimizer("Minuit2","minimize"),RooFit::PrintLevel(-1));
 		//,RooFit::Optimize(0));
 
@@ -297,7 +314,7 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
       RooDataHist *toy = pdf->generateBinned(RooArgSet(*mass),nToyEvents,0,1);
       //RooDataSet *toy = pdf->generate(RooArgSet(*mass),nToyEvents,0,1);
    //   pdf->fitTo(*toy,RooFit::Minimizer("Minuit2","minimize"),RooFit::Minos(0),RooFit::Hesse(0),RooFit::PrintLevel(-1),RooFit::Strategy(2),RooFit::Offset(kTRUE),RooFit::SumW2Error(kTRUE)); //FIXME
-      pdf->fitTo(*toy,RooFit::Minimizer("Minuit2","minimize"),RooFit::PrintLevel(-1),RooFit::Strategy(2),RooFit::Offset(kFALSE),RooFit::SumW2Error(kTRUE)); //FIXME
+      pdf->fitTo(*toy,RooFit::Minimizer("Minuit2","minimize"),RooFit::PrintLevel(-1),RooFit::Strategy(2),RooFit::Offset(kTRUE),RooFit::SumW2Error(kTRUE)); //FIXME
 
       RooPlot *plot_t = mass->frame();
       toy->plotOn(plot_t);
@@ -427,7 +444,7 @@ void plot(RooRealVar *mass, RooMultiPdf *pdfs, RooCategory *catIndex, RooDataSet
     else {col=kBlack; style++;}
     catIndex->setIndex(icat);
    // pdfs->getCurrentPdf()->fitTo(*data,RooFit::Minos(0),RooFit::Minimizer("Minuit2","minimize"),RooFit::SumW2Error(kTRUE));	 //FIXME
-    pdfs->getCurrentPdf()->fitTo(*data,RooFit::Offset(kFALSE),RooFit::Strategy(2),RooFit::Minimizer("Minuit2","minimize"),RooFit::SumW2Error(kTRUE));	 //FIXME
+    pdfs->getCurrentPdf()->fitTo(*data,RooFit::Offset(kTRUE),RooFit::Strategy(2),RooFit::Minimizer("Minuit2","minimize"),RooFit::SumW2Error(kTRUE));	 //FIXME
     pdfs->getCurrentPdf()->plotOn(plot,LineColor(col),LineStyle(style));//,RooFit::NormRange("fitdata_1,fitdata_2"));
     TObject *pdfLeg = plot->getObject(int(plot->numItems()-1));
     std::string ext = "";
