@@ -1,2 +1,0 @@
-moriond2016/couplings/hgg : rev 6795
-cadi/HIG-15-005/ : rev 6836
