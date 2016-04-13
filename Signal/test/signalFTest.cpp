@@ -21,6 +21,7 @@
 #include "RooPlot.h"
 #include "RooMsgService.h"
 #include "RooMinuit.h"
+#include "RooCBShape.h"
 
 #include "boost/program_options.hpp"
 #include "boost/algorithm/string/split.hpp"
@@ -396,16 +397,34 @@ int main(int argc, char *argv[]){
 			double prob=0.;
 			std::vector<pair<int,float> > rv_results;
 			float rv_prob_limit =999;
-
+     
+      std::cout << "Fiiting Defining CB vars" << std::endl;
+			  RooRealVar *m = new RooRealVar ("m","m",125,115,135);
+			  RooRealVar *m0 = new RooRealVar ("m0","m0",125,115,135);
+			  RooRealVar *s= new RooRealVar ("s","s",3,1.,5.);
+			  RooRealVar *a= new RooRealVar ("alpha","alpha",1,0.,5.);;
+			  RooRealVar *n= new RooRealVar ("n","n",5,0,10);;
+      std::cout << "Fiiting Defining CB PDF" << std::endl;
+        RooCBShape *cbshape = new RooCBShape("testCB","testCB",*mass, *m0, *s, *a,*n);
+      std::cout << "Fiiting  CB PDF ("<< cbshape << ") tp data ("<< dataRV << ")" << std::endl;
+				RooFitResult *fitRes = cbshape->fitTo(*dataRV,
+          RooFit::Minimizer("Minuit","minimize"),
+          SumW2Error(true),Verbose(true),Range(mass_-10,mass_+10));
+      std::cout << "Fiiting to Cb done" << std::endl;
 			dataRV->plotOn(plotsRV[proc][cat]);
-			while (prob<rv_prob_limit && order <5){ 
+		  cbshape->plotOn(plotsRV[proc][cat],LineColor(colors[0]));
+
+
+			/*while (prob<rv_prob_limit && order <5){ 
 			  
         // build sum of gaussians of correct order
         RooAddPdf *pdf = buildSumOfGaussians(
           Form("cat%d_g%d",cat,order),mass,MH,order);
-
         //do the fit
-				RooFitResult *fitRes = pdf->fitTo(*dataRV,Save(true),
+				//RooFitResult *fitRes = pdf->fitTo(*dataRV,Save(true),
+        //  RooFit::Minimizer("Minuit","minimize"),
+        //  SumW2Error(true),Verbose(false),Range(mass_-10,mass_+10));
+				RooFitResult *fitRes = cbshape->fitTo(*dataRV,Save(true),
           RooFit::Minimizer("Minuit","minimize"),
           SumW2Error(true),Verbose(false),Range(mass_-10,mass_+10));
 			  
@@ -461,9 +480,25 @@ int main(int argc, char *argv[]){
 			}else {
 				rvChoice=cache_order;
 			}
-
+      */
+      
+			std::cout << "Fiiting Defining CB vars" << std::endl;
+			  RooRealVar *mWV = new RooRealVar ("mWV","mWV",125,115,135);
+			  RooRealVar *m0WV = new RooRealVar ("m0WV","m0WV",125,115,135);
+			  RooRealVar *sWV= new RooRealVar ("sWV","sWV",3,1.,5.);
+			  RooRealVar *aWV= new RooRealVar ("alphaWV","alphaWV",1,0.,5.);;
+			  RooRealVar *nWV= new RooRealVar ("nWV","nWV",5,0,10);;
+      std::cout << "Fiiting Defining CB PDF" << std::endl;
+        RooCBShape *cbshapeWV = new RooCBShape("testCBWV","testCBWV",*mass, *m0WV, *sWV, *aWV,*nWV);
+      std::cout << "Fiiting  CB PDF ("<< cbshapeWV << ") tp data ("<< dataWV << ")" << std::endl;
+				RooFitResult *fitResWV = cbshapeWV->fitTo(*dataWV,
+          RooFit::Minimizer("Minuit","minimize"),
+          SumW2Error(true),Verbose(true),Range(mass_-10,mass_+10));
+      std::cout << "Fiiting to Cb done" << std::endl;
+			dataWV->plotOn(plotsWV[proc][cat]);
+		  cbshapeWV->plotOn(plotsWV[proc][cat],LineColor(colors[0]));
 			// wrong vertex
-			order=1;
+			/*order=1;
 			prev_order=0;
 			cache_order=0;
 			thisNll=0.;
@@ -529,7 +564,7 @@ int main(int argc, char *argv[]){
 				}
 			}else {
 				wvChoice=cache_order;
-			}
+			}*/
       
       // insert final choices!
 			choices.insert(pair<string,pair<int,int> >(
