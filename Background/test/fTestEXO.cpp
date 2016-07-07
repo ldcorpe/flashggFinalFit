@@ -73,6 +73,20 @@ RooAbsPdf* getPdf(PdfModelBuilder &pdfsModel, string type, int order, const char
   }
 }
 
+RooDataSet * treeToDataset( string name, TNtuple *ttree, RooRealVar *m ){
+
+RooDataSet * res = new RooDataSet( name.c_str(), name.c_str(), RooArgSet(*m));
+float massval=0.;
+ttree->SetBranchAddress("mass",&massval);
+for (int i =0; i<ttree->GetEntries() ; i++){
+ttree->GetEntry(i);
+m->setVal(massval);
+std::cout << " setting entry for dset " << name << " as " << m->getVal() << std::endl;
+res->add(RooArgSet(*m));
+}
+return res ;
+}
+
 void runFit(RooAbsPdf *pdf, RooDataSet *data, double *NLL, int *stat_t, int MaxTries){
 
 	int ntries=0;
@@ -87,24 +101,41 @@ void runFit(RooAbsPdf *pdf, RooDataSet *data, double *NLL, int *stat_t, int MaxT
 	  if (ntries>=MaxTries) break;
 	  //std::cout << "current try " << ntries << " stat=" << stat << " minnll=" << minnll << std::endl;
 	std::cout << "--------------------- FITTING-------------------------------" << std::endl;
+	data->Print();
+	std::cout << "-----------------------------------------------------------" << std::endl;
+
+
 	 // RooFitResult *fitTest = pdf->fitTo(*data,RooFit::Save(1),RooFit::Minimizer("Minuit2","minimize"),RooFit::Offset(kTRUE),RooFit::Strategy(2)); 
      // stat = fitTest->status();
 	 // minnll = fitTest->minNll();
 	 //new fit routine to get offset 
+	std::cout << "----debug 1--------" << std::endl;
 	  RooNLLVar *nll=new RooNLLVar("nll","nll",*pdf,*data);
+	std::cout << "----debug 2--------" << std::endl;
 	  RooFitResult *fitTest;
+	std::cout << "----debug 3--------" << std::endl;
 	  RooMinimizer *minuit_fitTest = new RooMinimizer(*nll);
+	std::cout << "----debug 4--------" << std::endl;
 	  minuit_fitTest->setOffsetting(kTRUE);
+	std::cout << "----debug 5--------" << std::endl;
 	  minuit_fitTest->setStrategy(2);
+	std::cout << "----debug 6--------" << std::endl;
 	  minuit_fitTest->minimize("Minuit2","minimize");
 //	  minuit_fitTest->hesse();
+	std::cout << "----debug 7--------" << std::endl;
 	  fitTest = minuit_fitTest->save("fitTest","fitTest");
+	std::cout << "----debug 8--------" << std::endl;
 	  offset= nll->offset();
+	std::cout << "----debug 9--------" << std::endl;
 	 // cout << nll->isOffsetting()<< endl;
+	std::cout << "----debug 10--------" << std::endl;
 	  //cout << nll->offsetCarry()<< endl;
 	  minnll_woffset=fitTest->minNll();
+	std::cout << "----debug 11--------" << std::endl;
 	  minnll=-offset-minnll_woffset;
+	std::cout << "----debug 12--------" << std::endl;
 	  stat=fitTest->status();
+	std::cout << "----debug 13--------" << std::endl;
 
 	  if (stat!=0) params_test->assignValueOnly(fitTest->randomizePars());
 	  ntries++; 
@@ -234,6 +265,7 @@ double getProbabilityFtest(double chi2, int ndof,RooAbsPdf *pdfNull, RooAbsPdf *
   lat->SetNDC();
   lat->SetTextFont(42);
   lat->DrawLatex(0.1,0.91,Form("Prob (asymptotic) = %.4f (%.4f)",prob,prob_asym));
+	std::cout << "A saving " << name << ".pdf" << std::endl;
   can->SaveAs(Form("%s.png",name.c_str()));
   can->SaveAs(Form("%s.pdf",name.c_str()));
   can->SaveAs(Form("%s.root",name.c_str()));
@@ -338,6 +370,7 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
     TArrow lData(chi2*(nBinsForMass-np),toyhist.GetMaximum(),chi2*(nBinsForMass-np),0);
     lData.SetLineWidth(2);
     lData.Draw();
+		std::cout << "B saving " << name << ".pdf" << std::endl;
     can->SaveAs(Form("%s.png",name.c_str()));
     can->SaveAs(Form("%s.pdf",name.c_str()));
 
@@ -392,6 +425,7 @@ void plot(RooRealVar *mass, RooAbsPdf *pdf, RooDataSet *data, string name,vector
   lat->SetNDC();
   lat->SetTextFont(42);
   lat->DrawLatex(0.1,0.92,Form("#chi^{2} = %.3f, red #chi^{2} = %.3f, Prob= %.2f, Fit Status = %d ",chi2*(nBinsForMass-np),chi2,*prob,status));
+	std::cout << "C saving " << name << ".pdf" << std::endl;
   canv->SaveAs(Form("%s.pdf",name.c_str()));
   canv->SaveAs(Form("%s.png",name.c_str()));
   canv->SaveAs(Form("%s.root",name.c_str()));
@@ -423,6 +457,7 @@ void plot(RooRealVar *mass, RooMultiPdf *pdfs, RooCategory *catIndex, RooDataSet
   mass->setRange("unblindReg_1",0,500);
 //  int nBinsForMass=mass->getBinning().numBins() ;
   if (BLIND) {
+	std::cout << " why are we blind !?" <<std::endl;
 //  data->plotOn(plot,Binning(nBinsForMass),CutRange("unblindReg_1"));
   data->plotOn(plot,CutRange("unblindReg_1"));
     //data->plotOn(plot,Binning(80),CutRange("unblindReg_2"));
@@ -430,7 +465,15 @@ void plot(RooRealVar *mass, RooMultiPdf *pdfs, RooCategory *catIndex, RooDataSet
     data->plotOn(plot,Invisible());
   }
  // else data->plotOn(plot,Binning(nBinsForMass)); 
-  else data->plotOn(plot); 
+  else {
+	std::cout << "plotting data on plot!!" << std::endl;
+  mass->Print();
+	data->Print();
+	data->plotOn(plot); 
+  plot->Draw();
+	canv->SaveAs(Form("testlc.pdf"));
+
+	}
 
   int currentIndex = catIndex->getIndex();
   TObject *datLeg = plot->getObject(int(plot->numItems()-1));
@@ -453,6 +496,7 @@ void plot(RooRealVar *mass, RooMultiPdf *pdfs, RooCategory *catIndex, RooDataSet
   if (BLIND) plot->SetMinimum(0.0001);
   plot->Draw();
   leg->Draw("same");
+	std::cout << "D saving " << name << ".pdf" << std::endl;
   canv->SaveAs(Form("%s.png",name.c_str()));
   canv->SaveAs(Form("%s.pdf",name.c_str()));
   canv->SaveAs(Form("%s.root",name.c_str()));
@@ -505,6 +549,7 @@ void plot(RooRealVar *mass, map<string,RooAbsPdf*> pdfs, RooDataSet *data, strin
   if (BLIND) plot->SetMinimum(0.0001);
   plot->Draw();
   leg->Draw("same");
+	std::cout << "E saving " << name << ".pdf" << std::endl;
   canv->SaveAs(Form("%s.pdf",name.c_str()));
   canv->SaveAs(Form("%s.png",name.c_str()));
   canv->SaveAs(Form("%s.root",name.c_str()));
@@ -740,8 +785,8 @@ if (saveMultiPdf){
                 inNT = (TNtuple*)inFile->Get("cic/trees/Data_13TeV_EBHighR9");
                 inNT2 = (TNtuple*)inFile->Get("cic/trees/Data_13TeV_EBLowR9");
             }else if (diphotonCats_[cat]=="EBEE"){ 
-                inNT = (TNtuple*)inFile->Get("cic/trees/Data_13TeV_EBHighR9");
-                inNT2 = (TNtuple*)inFile->Get("cic/trees/Data_13TeV_EBLowR9");
+                inNT = (TNtuple*)inFile->Get("cic/trees/Data_13TeV_EEHighR9");
+                inNT2 = (TNtuple*)inFile->Get("cic/trees/Data_13TeV_EELowR9");
             }
         
 		} else {
@@ -754,8 +799,10 @@ if (saveMultiPdf){
 			map<string,RooAbsPdf*> pdfs;
 			map<string,RooAbsPdf*> allPdfs;
 
-			RooDataSet *dataFull = new RooDataSet( Form("data_%s",catname.c_str()),"data_unbinned" ,inNT, RooArgSet(*mass) );
-			RooDataSet *dataFull2 = new RooDataSet( Form("data_%s",catname.c_str()),"data_unbinned" ,inNT2, RooArgSet(*mass) );
+			//RooDataSet *dataFull = new RooDataSet( Form("data_%s",catname.c_str()),"data_unbinned" ,inNT, RooArgSet(*mass) );
+			//RooDataSet *dataFull2 = new RooDataSet( Form("data_%s",catname.c_str()),"data_unbinned" ,inNT2, RooArgSet(*mass) );
+			RooDataSet *dataFull = treeToDataset(Form("data_%s",catname.c_str()) ,inNT, mass );
+			RooDataSet *dataFull2 = treeToDataset(Form("data_%s",catname.c_str()) ,inNT2, mass );
 
             cout << "TEST -------------" << endl;
             dataFull->Print("V");
@@ -764,6 +811,12 @@ if (saveMultiPdf){
             //Merge high and low R9
             cout << "------------------" << endl;
             dataFull->append(*dataFull2);
+						for (int i =0 ; i < dataFull->numEntries(); i++){
+						float m = dataFull->get(i)->getRealValue(mass->GetName());
+						float w= dataFull->weight();
+							if (i%100==0) std::cout << " entry " << i << " has mass " << m << " weight " << w << std::endl;
+
+						}
             dataFull->Print("V");
             
 
