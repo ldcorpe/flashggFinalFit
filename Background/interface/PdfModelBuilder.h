@@ -63,6 +63,7 @@ class PdfModelBuilder {
     RooAbsPdf* getExponentialSingle(string prefix, int order);
     RooAbsPdf* getLaurentSeries(string prefix, int order);
     RooAbsPdf* getDijet(string prefix,int order);
+    RooAbsPdf* getVVdijet(string prefix, int order);
     RooAbsPdf* getDijetSimple(string prefix,int order);
     RooAbsPdf* getAtlas(string prefix,int order);
     RooAbsPdf* getBernstein(string prefix,int order);

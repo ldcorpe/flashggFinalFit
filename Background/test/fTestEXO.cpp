@@ -731,9 +731,19 @@ if (saveMultiPdf){
 		}
 		mass->setBins(nBinsForMass);
 
-    	TNtuple *inNT;
+        TNtuple *inNT;
+    	TNtuple *inNT2;
 		if (isData_){
 			inNT = (TNtuple*)inFile->Get(Form("tree_data_%s_%s",analysisType_.c_str(),diphotonCats_[cat].c_str()));
+
+            if (diphotonCats_[cat]=="EBEB"){ 
+                inNT = (TNtuple*)inFile->Get("cic/trees/Data_13TeV_EBHighR9");
+                inNT2 = (TNtuple*)inFile->Get("cic/trees/Data_13TeV_EBLowR9");
+            }else if (diphotonCats_[cat]=="EBEE"){ 
+                inNT = (TNtuple*)inFile->Get("cic/trees/Data_13TeV_EBHighR9");
+                inNT2 = (TNtuple*)inFile->Get("cic/trees/Data_13TeV_EBLowR9");
+            }
+        
 		} else {
 			inNT = (TNtuple*)inFile->Get(Form("tree_data_%s_%s",analysisType_.c_str(),diphotonCats_[cat].c_str()));
 		}
@@ -743,11 +753,29 @@ if (saveMultiPdf){
 			map<string,std::vector<int> > choices_envelope;
 			map<string,RooAbsPdf*> pdfs;
 			map<string,RooAbsPdf*> allPdfs;
+
 			RooDataSet *dataFull = new RooDataSet( Form("data_%s",catname.c_str()),"data_unbinned" ,inNT, RooArgSet(*mass) );
- 		if (dataFull){
+			RooDataSet *dataFull2 = new RooDataSet( Form("data_%s",catname.c_str()),"data_unbinned" ,inNT2, RooArgSet(*mass) );
+
+            cout << "TEST -------------" << endl;
+            dataFull->Print("V");
+            dataFull2->Print("V");
+
+            //Merge high and low R9
+            cout << "------------------" << endl;
+            dataFull->append(*dataFull2);
+            dataFull->Print("V");
+            
+
+
+
+            if (dataFull){
 			std::cout << "[INFO] opened data for  "  << dataFull->GetName()  <<" - " << dataFull <<std::endl;
 			if (verbose) dataFull->Print("V");
-		}
+		    }
+
+
+
 		if(diphotonCats_[cat]=="EBEE"){  
 			mass->setRange(320,1600); //FIXME Need a more configurable method to set range
 			nBinsForMass=64;//roughly binning of 20 GeV acoording to EXO-15-004
